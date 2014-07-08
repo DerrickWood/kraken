@@ -131,6 +131,8 @@ close $fh2;
     elsif ($fastq_input) {
       if ($buffers{$fh} =~ /^@(\S+)/) {
         $id = $1;
+        # remove _1 or .1 from read IDs
+        $id =~ s/[_.][12]//g;
       }
       else {
         if ($buffers{$fh} =~ /^$/) {
