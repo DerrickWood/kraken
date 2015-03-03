@@ -41,6 +41,7 @@ my $DEF_KMER_LEN = 31;
 my $DEF_THREAD_CT = 1;
 
 my @VALID_LIBRARY_TYPES = qw/bacteria plasmids viruses human/;
+my @VALID_SPECIAL_DB_TYPES = qw/greengenes silva/;
 
 # Option/task option variables
 my (
@@ -59,6 +60,7 @@ my (
   $add_to_library,
   $build,
   $rebuild,
+  $special,
   $shrink,
   $standard,
   $upgrade,
@@ -79,6 +81,7 @@ my @TASK_LIST = (
   \$add_to_library,
   \$build,
   \$rebuild,
+  \$special,
   \$shrink,
   \$standard,
   \$upgrade,
@@ -104,6 +107,7 @@ GetOptions(
   "add-to-library=s" => \$add_to_library,
   "build" => \$build,
   "rebuild" => \$rebuild,
+  "special=s", \$special,
   "shrink=i" => \$shrink,
   "upgrade" => \$upgrade,
   "standard" => \$standard,
@@ -184,6 +188,9 @@ elsif ($clean) {
 elsif ($upgrade) {
   upgrade_database();
 }
+elsif ($special) {
+  build_special_db($special);
+}
 else {
   usage();
 }
@@ -207,6 +214,8 @@ Task options (exactly one must be selected):
                              in library)
   --rebuild                  Create DB from library like --build, but remove
                              existing non-library/taxonomy files before build
+  --special TYPE             Build a special, pre-defined database
+                             (TYPE = one of "greengenes", "silva")
   --clean                    Remove unneeded files from a built database
   --shrink NEW_CT            Shrink an existing DB to have only NEW_CT k-mers
   --standard                 Download and create default database
@@ -283,7 +292,7 @@ sub standard_installation {
 }
 
 sub build_database {
-  $ENV{"KRAKEN_REBUILD_DATABASE"} = $rebuild;
+  $ENV{"KRAKEN_REBUILD_DATABASE"} = ($rebuild || "");
   exec "build_kraken_db.sh";
 }
 
@@ -293,4 +302,22 @@ sub clean_database {
 
 sub upgrade_database {
   exec "upgrade_db.sh";
+}
+
+sub build_special_db {
+  my $type = shift;
+  if (! grep $type eq $_, @VALID_SPECIAL_DB_TYPES) {
+    warn "Unknown special DB type \"$type\"\n";
+    usage();
+  }
+
+  if ($type eq "greengenes") {
+    exec "16S_gg_installation.sh";
+  }
+  elsif ($type eq "silva") {
+    exec "16S_silva_installation.sh";
+  }
+  else {
+    die "$PROG: unrecognized special DB type, this is a Kraken error\n";
+  }
 }
