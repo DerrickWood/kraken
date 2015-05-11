@@ -41,7 +41,7 @@ my $DEF_KMER_LEN = 31;
 my $DEF_THREAD_CT = 1;
 
 my @VALID_LIBRARY_TYPES = qw/bacteria plasmids viruses human/;
-my @VALID_SPECIAL_DB_TYPES = qw/greengenes silva/;
+my @VALID_SPECIAL_DB_TYPES = qw/greengenes silva rdp/;
 
 # Option/task option variables
 my (
@@ -215,7 +215,7 @@ Task options (exactly one must be selected):
   --rebuild                  Create DB from library like --build, but remove
                              existing non-library/taxonomy files before build
   --special TYPE             Build a special, pre-defined database
-                             (TYPE = one of "greengenes", "silva")
+                             (TYPE = one of "greengenes", "rdp", "silva")
   --clean                    Remove unneeded files from a built database
   --shrink NEW_CT            Shrink an existing DB to have only NEW_CT k-mers
   --standard                 Download and create default database
@@ -316,6 +316,9 @@ sub build_special_db {
   }
   elsif ($type eq "silva") {
     exec "16S_silva_installation.sh";
+  }
+  elsif ($type eq "rdp") {
+    exec "16S_rdp_installation.sh";
   }
   else {
     die "$PROG: unrecognized special DB type, this is a Kraken error\n";

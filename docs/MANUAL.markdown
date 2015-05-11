@@ -466,6 +466,55 @@ After building a database, if you want to reduce the disk usage of
 the database you can use `kraken-build`'s `--clean` switch to remove
 all intermediate files from the database directory.
 
+
+Special Databases
+=================
+
+To support some common use cases, we provide the ability to build Kraken
+databases using data from various external databases.  These external
+databases may not follow the NCBI taxonomy, and so we've provided
+mechanisms to automatically create a taxonomy that will work with Kraken
+(although such taxonomies may not be identical to NCBI's).
+
+To build one of these "special" Kraken databases, use the following command:
+
+    kraken-build --db $DBNAME --special TYPE
+
+where the `TYPE` string is one of the database names listed below.
+
+At present, the "special" Kraken database support we provide is limited
+to pre-packaged solutions for some public 16S sequence databases, but this may
+grow in the future.
+
+16S Databases
+-------------
+
+For targeted 16S sequencing projects, a normal Kraken database using whole
+genome data may use more resources than necessary.  A Kraken database created
+from a well-curated genomic library of just 16S data can provide both a more
+efficient solution as well as a more accurate set of predictions.  We provide
+support for building Kraken databases from three publicly available 16S
+databases:
+
+* [Greengenes] (Kraken database name: `greengenes`), using all available 16S data.
+* [RDP] (Kraken database name: `rdp`), using the bacterial and archaeal 16S data.
+* [SILVA] (Kraken database name: `silva`), using the Small subunit NR99 sequence set.
+
+Note that these databases may have licensing restrictions regarding their data,
+and it is your responsibility to ensure you are in compliance with those
+restrictions; please visit the databases' websites for further details.  The
+`kraken-build` script only uses publicly available URLs to download data and
+then converts that data into a form compatible for use with Kraken.
+
+Furthermore, if you use one of these databases in your research, please
+visit the corresponding database's website to determine the appropriate and
+up-to-date citation.
+
+[Greengenes]:   http://greengenes.lbl.gov/
+[RDP]:          http://rdp.cme.msu.edu/
+[SILVA]:        http://www.arb-silva.de/
+
+
 Memory Usage and Efficiency
 ===========================
 
