@@ -95,7 +95,9 @@ for my $file (@ARGV) {
   my %taxo_counts;
   while (<FILE>) {
     my @fields = split;
-    $taxo_counts{$fields[2]}++;
+    my $taxid = $fields[2];
+    $taxid =~ s/:[0-9:]+//;
+    $taxo_counts{$taxid}++;
   }
   my %clade_counts = %taxo_counts;
   dfs_summation(1, \%clade_counts);

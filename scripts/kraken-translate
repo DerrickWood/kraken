@@ -80,6 +80,7 @@ while (<>) {
   chomp;
   my @fields = split;
   my ($seqid, $taxid) = @fields[1,2];
+  $taxid =~ s/:[0-9:]+//;
   my $taxonomy_str = get_taxonomy_str($taxid);
   print "$seqid\t$taxonomy_str\n";
 }

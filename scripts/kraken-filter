@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2013, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -84,6 +84,7 @@ while (<>) {
   chomp;
   my @fields = split /\t/;
   my ($code, $seqid, $called_taxon, $len, $hit_list) = @fields;
+  $called_taxon =~ s/:[0-9:]+//;  # turn full taxonomy listing into single taxon
   my @hits = split " ", $hit_list;
   my %hit_counts;
   for (@hits) {

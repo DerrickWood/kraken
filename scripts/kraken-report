@@ -79,7 +79,9 @@ my $seq_count = 0;
 $taxo_counts{0} = 0;
 while (<>) {
   my @fields = split;
-  $taxo_counts{$fields[2]}++;
+  my $taxid = $fields[2];
+  $taxid =~ s/:[0-9:]+//;
+  $taxo_counts{$taxid}++;
   $seq_count++;
 }
 my $classified_count = $seq_count - $taxo_counts{0};

@@ -43,6 +43,7 @@ my $BZIP2_MAGIC = "BZ";
 
 my $quick = 0;
 my $min_hits = 1;
+my $full_taxonomy = 0;
 my $fasta_input = 0;
 my $fastq_input = 0;
 my $db_prefix;
@@ -62,6 +63,7 @@ GetOptions(
   "version" => \&display_version,
   "db=s" => \$db_prefix,
   "threads=i" => \$threads,
+  "full-taxonomy" => \$full_taxonomy,
   "fasta-input" => \$fasta_input,
   "fastq-input" => \$fastq_input,
   "quick" => \$quick,
@@ -145,6 +147,7 @@ push @flags, "-C", $classified_out if defined $classified_out;
 push @flags, "-o", $outfile if defined $outfile;
 push @flags, "-c", if $only_classified_output;
 push @flags, "-M" if $preload;
+push @flags, "-F" if $full_taxonomy;
 
 # handle piping for decompression/merging
 my @pipe_argv;

@@ -36,10 +36,12 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 string hitlist_string(vector<uint32_t> &taxa, vector<uint8_t> &ambig);
 set<uint32_t> get_ancestry(uint32_t taxon);
 void report_stats(struct timeval time1, struct timeval time2);
+string construct_full_call(uint32_t taxon, map<uint32_t, uint32_t> parent_map);
 
 int Num_threads = 1;
 string DB_filename, Index_filename, Nodes_filename;
 bool Quick_mode = false;
+bool Report_full_taxonomy = false;
 bool Fastq_input = false;
 bool Print_classified = false;
 bool Print_unclassified = false;
@@ -48,6 +50,7 @@ bool Populate_memory = false;
 bool Only_classified_kraken_output = false;
 uint32_t Minimum_hit_count = 1;
 map<uint32_t, uint32_t> Parent_map;
+map<uint32_t, string> Full_taxonomy_map;
 KrakenDB Database;
 string Classified_output_file, Unclassified_output_file, Kraken_output_file;
 ostream *Classified_output;
@@ -202,6 +205,18 @@ void process_file(char *filename) {
   delete reader;
 }
 
+string construct_full_call(uint32_t taxon) {
+  if (! taxon)
+    return "0";
+  stringstream ss;
+  ss << taxon;
+  while (taxon > 1) {
+    taxon = Parent_map[taxon];
+    ss << ":" << taxon;
+  }
+  return ss.str();
+}
+
 void classify_sequence(DNASequence &dna, ostringstream &koss,
                        ostringstream &coss, ostringstream &uoss) {
   vector<uint32_t> taxa;
@@ -250,18 +265,36 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
     #pragma omp atomic
     total_classified++;
 
+  string reported_call;
+  if (Report_full_taxonomy) {
+    if (Full_taxonomy_map.count(call) == 0) {
+      reported_call = construct_full_call(call);
+      Full_taxonomy_map[call] = reported_call;
+    }
+    else {
+      reported_call = Full_taxonomy_map[call];
+    }
+  }
+  else {
+    stringstream ss;
+    ss << call;
+    reported_call = ss.str();
+  }
+
   if (Print_unclassified || Print_classified) {
     ostringstream *oss_ptr = call ? &coss : &uoss;
     bool print = call ? Print_classified : Print_unclassified;
     if (print) {
       if (Fastq_input) {
-        (*oss_ptr) << "@" << dna.header_line << endl
+        (*oss_ptr) << "@" << dna.header_line << "\tkraken:taxid|"
+              << reported_call << endl
             << dna.seq << endl
             << "+" << endl
             << dna.quals << endl;
       }
       else {
-        (*oss_ptr) << ">" << dna.header_line << endl
+        (*oss_ptr) << ">" << dna.header_line << "\tkraken:taxid|"
+              << reported_call << endl
             << dna.seq << endl;
       }
     }
@@ -278,7 +311,7 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
       return;
     koss << "U\t";
   }
-  koss << dna.id << "\t" << call << "\t" << dna.seq.size() << "\t";
+  koss << dna.id << "\t" << reported_call << "\t" << dna.seq.size() << "\t";
 
   if (Quick_mode) {
     koss << "Q:" << hits;
@@ -346,7 +379,7 @@ void parse_command_line(int argc, char **argv) {
 
   if (argc > 1 && strcmp(argv[1], "-h") == 0)
     usage(0);
-  while ((opt = getopt(argc, argv, "d:i:t:u:n:m:o:qfcC:U:M")) != -1) {
+  while ((opt = getopt(argc, argv, "d:i:t:u:n:m:o:qfcFC:U:M")) != -1) {
     switch (opt) {
       case 'd' :
         DB_filename = optarg;
@@ -403,6 +436,9 @@ void parse_command_line(int argc, char **argv) {
       case 'M' :
         Populate_memory = true;
         break;
+      case 'F' :
+        Report_full_taxonomy = true;
+        break;
       default:
         usage();
         break;
@@ -443,6 +479,7 @@ void usage(int exit_code) {
        << "  -f               Input is in FASTQ format" << endl
        << "  -c               Only include classified reads in output" << endl
        << "  -M               Preload database files" << endl
+       << "  -F               Report taxonomy up to root of tree" << endl
        << "  -h               Print this message" << endl
        << endl
        << "At least one FASTA or FASTQ file must be specified." << endl
