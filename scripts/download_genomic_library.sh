@@ -23,6 +23,9 @@
 #   plasmids - NCBI RefSeq plasmid sequences
 #   viruses - NCBI RefSeq complete viral DNA and RNA genomes
 #   human - NCBI RefSeq GRCh38 human reference genome
+#   univec - NCBI UniVec vector and adapter set
+#   univec-core - NCBI UniVec subset for some automated tools
+#   hmp-bacteria - Bacterial genomes from the Human Microbiome Project
 
 set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
@@ -112,8 +115,53 @@ case "$1" in
       echo "Skipping download of human genome, already downloaded here."
     fi
     ;;
+  "univec")
+    mkdir -p $LIBRARY_DIR/UniVec
+    cd $LIBRARY_DIR/UniVec
+    if [ ! -e "lib.complete" ]
+    then
+      rm -f UniVec
+      wget $FTP_SERVER/pub/UniVec/UniVec
+      # Set taxonomy ID of all sequences to "artificial sequences"
+      sed -e 's/^>/>kraken:taxid|81077|/' UniVec > UniVec.fa
+      touch "lib.complete"
+    fi
+    ;;
+  "univec-core")
+    mkdir -p $LIBRARY_DIR/UniVec_Core
+    cd $LIBRARY_DIR/UniVec_Core
+    if [ ! -e "lib.complete" ]
+    then
+      rm -f UniVec_Core
+      wget $FTP_SERVER/pub/UniVec/UniVec_Core
+      # Set taxonomy ID of all sequences to "artificial sequences"
+      sed -e 's/^>/>kraken:taxid|81077|/' UniVec_Core > UniVec_Core.fa
+      touch "lib.complete"
+    fi
+    ;;
+  "hmp-bacteria")
+    mkdir -p $LIBRARY_DIR/HMP_Bacteria
+    cd $LIBRARY_DIR/HMP_Bacteria
+    if [ ! -e "lib.complete" ]
+    then
+      rm -f all.fna.tar.gz
+      wget $FTP_SERVER/genomes/HUMAN_MICROBIOM/Bacteria/all.fna.tar.gz
+      tar zxf all.fna.tar.gz
+
+      echo -n "Unpacking..."
+
+      echo '#!/bin/bash' > untar_scaffold
+      echo 'tar zxf $1 -C $(dirname $1)' >> untar_scaffold
+      chmod +x untar_scaffold
+
+      find -name '*.fna.tgz' | xargs -n1 ./untar_scaffold
+
+      touch "lib.complete"
+      echo " complete."
+    fi
+    ;;
   *)
     echo "Unsupported library.  Valid options are: "
-    echo "  bacteria plasmids virus human"
+    echo "  bacteria plasmids virus human univec univec-core hmp-bacteria"
     ;;
 esac

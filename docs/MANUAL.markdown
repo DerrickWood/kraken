@@ -365,6 +365,9 @@ To build a custom database:
     - plasmids: RefSeq plasmid sequences
     - viruses: RefSeq complete viral genomes
     - human: GRCh38 human genome
+    - univec: UniVec database of vector and adapter sequences
+    - univec-core: subset of UniVec for some automated applications
+    - hmp-bacteria: bacterial genomes from the Human Microbiome Project
 
     To download and install any one of these, use the `--download-library`
     switch, e.g.:

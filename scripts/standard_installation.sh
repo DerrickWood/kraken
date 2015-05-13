@@ -34,6 +34,7 @@ check_for_jellyfish.sh
 kraken-build --db $KRAKEN_DB_NAME --download-taxonomy
 kraken-build --db $KRAKEN_DB_NAME --download-library bacteria
 kraken-build --db $KRAKEN_DB_NAME --download-library viruses
+kraken-build --db $KRAKEN_DB_NAME --download-library univec
 kraken-build --db $KRAKEN_DB_NAME --build --threads $KRAKEN_THREAD_CT \
                --jellyfish-hash-size "$KRAKEN_HASH_SIZE" \
                --max-db-size "$KRAKEN_MAX_DB_SIZE" \
