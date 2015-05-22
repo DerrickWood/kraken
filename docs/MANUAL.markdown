@@ -365,6 +365,7 @@ To build a custom database:
     - plasmids: RefSeq plasmid sequences
     - viruses: RefSeq complete viral genomes
     - human: GRCh38 human genome
+	- mouse: GRCm38 mouse genome
 
     To download and install any one of these, use the `--download-library`
     switch, e.g.:

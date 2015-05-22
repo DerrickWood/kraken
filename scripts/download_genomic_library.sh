@@ -23,6 +23,7 @@
 #   plasmids - NCBI RefSeq plasmid sequences
 #   viruses - NCBI RefSeq complete viral DNA and RNA genomes
 #   human - NCBI RefSeq GRCh38 human reference genome
+#   mouse - NCBI RefSeq GRCm38 mouse reference genome
 
 set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
@@ -101,7 +102,7 @@ case "$1" in
       do
         wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/$directory/
         file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\S+\.fa\.gz)\s*$/ and print $1' .listing)
-        [ -z "$file" ] && exit 1
+        [ -z $file ] && exit 1
         rm .listing
         wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
         gunzip "$file"
@@ -112,8 +113,35 @@ case "$1" in
       echo "Skipping download of human genome, already downloaded here."
     fi
     ;;
+  "mouse")
+    mkdir -p $LIBRARY_DIR/Mouse
+    cd $LIBRARY_DIR/Mouse
+    if [ ! -e "lib.complete" ]
+    then
+      # get list of CHR_* directories
+      wget --spider --no-remove-listing $FTP_SERVER/genomes/M_musculus/
+      directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
+      rm .listing
+
+      # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
+      for directory in $directories
+      do
+        wget --spider --no-remove-listing $FTP_SERVER/genomes/M_musculus/$directory/
+        file=$(perl -nle '/^-/ and /\b(mm_ref_GRCm\S+\.fa\.gz)\s*$/ and print $1' .listing)
+        [ -z $file ] && exit 1
+        rm .listing
+        wget $FTP_SERVER/genomes/M_musculus/$directory/$file
+        gunzip "$file"
+      done
+
+      touch "lib.complete"
+    else
+      echo "Skipping download of mouse genome, already downloaded here."
+    fi
+    ;;
   *)
     echo "Unsupported library.  Valid options are: "
-    echo "  bacteria plasmids virus human"
+    echo "  bacteria plasmids virus human mouse"
     ;;
+
 esac
