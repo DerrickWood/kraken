@@ -70,7 +70,11 @@ then
   exit 1
 fi
 
-idx_size=$(stat -c '%s' database.idx)
+if [[ $(uname) == "Darwin" ]]; then
+    idx_size=$(stat -f '%z' database.idx)
+else
+    idx_size=$(stat -c '%s' database.idx)
+fi
 # Calculate minimizer length based on existing index size
 minimizer_len=$(perl -le 'print int(log(shift() / 8 - 2) / log(4))' $idx_size)
 

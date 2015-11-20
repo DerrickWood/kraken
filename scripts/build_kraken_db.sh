@@ -72,7 +72,11 @@ else
   # Estimate hash size as 1.15 * chars in library FASTA files
   if [ -z "$KRAKEN_HASH_SIZE" ]
   then
-    KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+    if [[ $(uname) == "Darwin" ]]; then
+      KRAKEN_HASH_SIZE=$(find library/ -name '*.ffn' -ls | awk '{print $7}' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+    else
+      KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+    fi
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
@@ -104,7 +108,12 @@ else
     echo "Skipping step 2, database reduction already done."
   else
     start_time1=$(date "+%s.%N")
-    kdb_size=$(stat -c '%s' database.jdb)
+    if [[ $(uname) == "Darwin" ]]; then
+      kdb_size=$(stat -f '%z' database.jdb)
+    else
+      kdb_size=$(stat -c '%s' database.jdb)
+    fi
+
     idx_size=$(echo "8 * (4 ^ $KRAKEN_MINIMIZER_LEN + 2)" | bc)
     resize_needed=$(echo "scale = 10; ($kdb_size+$idx_size)/(2^30) > $KRAKEN_MAX_DB_SIZE" | bc)
     if (( resize_needed == 0 ))
