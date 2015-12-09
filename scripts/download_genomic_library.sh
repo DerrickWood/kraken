@@ -28,7 +28,7 @@ set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
 
 LIBRARY_DIR="$KRAKEN_DB_NAME/library"
-NCBI_SERVER="ftp.ncbi.nih.gov"
+NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 THIS_DIR=$PWD
@@ -40,7 +40,7 @@ case "$1" in
     if [ ! -e "lib.complete" ]
     then
       rm -f all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Bacteria/all.fna.tar.gz
+      wget $FTP_SERVER/genomes/archive/old_refseq/Bacteria/all.fna.tar.gz
       echo -n "Unpacking..."
       tar zxf all.fna.tar.gz
       rm all.fna.tar.gz
