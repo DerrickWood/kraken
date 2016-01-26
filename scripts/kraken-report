@@ -37,11 +37,13 @@ require "$KRAKEN_DIR/krakenlib.pm";
 
 my $show_zeros = 0;
 my $db_prefix;
+my $print_header;
 
 GetOptions(
   "help" => \&display_help,
   "version" => \&display_version,
   "show-zeros" => \$show_zeros,
+  "print_header" => \$print_header,
   "db=s" => \$db_prefix,
 );
 
@@ -52,7 +54,7 @@ if ($@) {
 
 sub usage {
   my $exit_code = @_ ? shift : 64;
-  print STDERR "Usage: $PROG [--db KRAKEN_DB_NAME] [--show-zeros] <kraken output file(s)>\n";
+  print STDERR "Usage: $PROG [--db KRAKEN_DB_NAME] [--show-zeros] [--print_header] <kraken output file(s)>\n";
   my $default_db;
   eval { $default_db = krakenlib::find_db(); };
   if (defined $default_db) {
@@ -65,10 +67,20 @@ sub display_help {
   usage(0);
 }
 
+sub version {
+  return "#####=VERSION=#####";
+}
+
 sub display_version {
-  print "Kraken version #####=VERSION=#####\n";
+  print "Kraken version ".version()."\n";
   print "Copyright 2013-2015, Derrick Wood (dwood\@cs.jhu.edu)\n";
   exit 0;
+}
+
+sub print_header {
+  my ($version,$db_prefix) = @_;
+  printf "#Kraken version: %s\n", $version;
+  printf "#Database: %s\n", $db_prefix;
 }
 
 my (%child_lists, %name_map, %rank_map);
@@ -91,6 +103,7 @@ for (keys %name_map) {
   $clade_counts{$_} ||= 0;
 }
 
+print_header(version(), $db_prefix) if($print_header);
 printf "%6.2f\t%d\t%d\t%s\t%d\t%s%s\n",
   $clade_counts{0} * 100 / $seq_count,
   $clade_counts{0}, $taxo_counts{0}, "U",
