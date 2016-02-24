@@ -200,6 +200,12 @@ void process_file(char *filename) {
   }  // end parallel section
 
   delete reader;
+  if (Print_kraken)
+    (*Kraken_output) << std::flush;
+  if (Print_classified)
+    (*Classified_output) << std::flush;
+  if (Print_unclassified)
+    (*Unclassified_output) << std::flush;
 }
 
 void classify_sequence(DNASequence &dna, ostringstream &koss,
