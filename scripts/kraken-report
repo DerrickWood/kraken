@@ -91,7 +91,7 @@ for (keys %name_map) {
   $clade_counts{$_} ||= 0;
 }
 
-my $unclassified_percent = 1;
+my $unclassified_percent = 100;
 if ($seq_count) {
   $unclassified_percent = $clade_counts{0} * 100 / $seq_count;
 }
