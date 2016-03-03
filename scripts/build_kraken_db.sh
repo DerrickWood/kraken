@@ -72,7 +72,7 @@ else
   # Estimate hash size as 1.15 * chars in library FASTA files
   if [ -z "$KRAKEN_HASH_SIZE" ]
   then
-    KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+      KRAKEN_HASH_SIZE=$(find library/ -name '*.ffn' -ls | awk '{print $7}' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
