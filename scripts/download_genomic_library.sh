@@ -24,6 +24,8 @@
 #   viruses - NCBI RefSeq complete viral DNA and RNA genomes
 #   human - NCBI RefSeq GRCh38 human reference genome
 
+# these are the old version, new version is already much better
+
 set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
 
@@ -32,6 +34,24 @@ NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 THIS_DIR=$PWD
+
+download_plasmid() {
+	echo downloading plasmids from NCBI refseq
+    mkdir -p $LIBRARY_DIR/Plasmids
+    cd $LIBRARY_DIR/Plasmids
+    if [ ! -e "lib.complete" ]; then
+      rm -f *.fna.gz
+      #wget $FTP_SERVER/genomes/Plasmids/plasmids.all.fna.tar.gz
+      wget $FTP_SERVER/genomes/refseq/plasmid/plasmid.1.1.genomic.fna.gz
+      wget $FTP_SERVER/genomes/refseq/plasmid/plasmid.2.1.genomic.fna.gz
+      echo -n "Unpacking..."
+		gunzip *.gz
+      echo " complete."
+      touch "lib.complete"
+    else
+      echo "Skipping download of plasmids, already downloaded here."
+    fi
+}
 
 case "$1" in
   "bacteria")
@@ -51,20 +71,7 @@ case "$1" in
     fi
     ;;
   "plasmids")
-    mkdir -p $LIBRARY_DIR/Plasmids
-    cd $LIBRARY_DIR/Plasmids
-    if [ ! -e "lib.complete" ]
-    then
-      rm -f plasmids.all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Plasmids/plasmids.all.fna.tar.gz
-      echo -n "Unpacking..."
-      tar zxf plasmids.all.fna.tar.gz
-      rm plasmids.all.fna.tar.gz
-      echo " complete."
-      touch "lib.complete"
-    else
-      echo "Skipping download of plasmids, already downloaded here."
-    fi
+		download_plasmid
     ;;
   "viruses")
     mkdir -p $LIBRARY_DIR/Viruses
