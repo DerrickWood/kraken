@@ -66,6 +66,8 @@ KrakenDB::KrakenDB(char *ptr) {
     errx(EX_DATAERR, "can only handle 4 byte DB values");
   k = key_bits / 2;
   key_len = key_bits / 8 + !! (key_bits % 8);
+  if (key_len != 8)
+    errx(EX_DATAERR, "can only handle 8 byte DB keys");
 }
 
 // Creates an index, indicating starting positions of each bin
