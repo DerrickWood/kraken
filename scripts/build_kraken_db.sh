@@ -77,8 +77,10 @@ else
   fi
 
   find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-    xargs -0 cat | \
-    jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
+      xargs -0 cat \
+      | dustmasker -outfmt fasta \
+      | sed -e '/>/!s/a\|c\|g\|t/N/g' \
+      jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
       -o database /dev/fd/0
 
   # Merge only if necessary
