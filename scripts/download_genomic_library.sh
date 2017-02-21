@@ -85,23 +85,33 @@ case "$1" in
     cd $LIBRARY_DIR/Human
     if [ ! -e "lib.complete" ]
     then
-      # get list of CHR_* directories
-      wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/
-      directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
-      rm .listing
 
-      # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
-      for directory in $directories
-      do
-        wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/$directory/
-        file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\w+\.fa\.gz)\s*$/ and print $1' .listing)
-        [ -z "$file" ] && exit 1
-        rm .listing
-        wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
-        gunzip "$file"
-      done
+	## Download all files in a single invocation to wget:
+	wget \
+	    --no-directories \
+	    --recursive \
+	    --level=2 \
+	    --accept "hs_ref_GRCh*.fa.gz" \
+	    $FTP_SERVER/genomes/Homo_sapiens/
 
-      touch "lib.complete"
+      # # get list of CHR_* directories
+      # wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/
+      # directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
+      # rm .listing
+
+      # # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
+      # for directory in $directories
+      # do
+      #   wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/$directory/
+      #   file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\w+\.fa\.gz)\s*$/ and print $1' .listing)
+      #   [ -z "$file" ] && exit 1
+      #   rm .listing
+      #   wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
+      #  gunzip *.gz
+      #done
+
+	gunzip *.gz
+	touch "lib.complete"
     else
       echo "Skipping download of human genome, already downloaded here."
     fi
