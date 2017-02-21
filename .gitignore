@@ -1,0 +1,6 @@
+src/classify
+src/db_shrink
+src/db_sort
+src/*.o
+src/make_seqid_to_taxid_map
+src/set_lcas
