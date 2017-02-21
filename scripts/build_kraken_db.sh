@@ -76,13 +76,27 @@ else
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-      xargs -0 cat \
-      | dustmasker -outfmt fasta \
-      | sed -e '/>/!s/a\|c\|g\|t/N/g' \
-      jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
-      -o database /dev/fd/0
 
+  if which dustmasker > /dev/null
+  then
+      
+      find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
+	  xargs -0 cat \
+	  | dustmasker -outfmt fasta \
+	  | sed -e '/>/!s/a\|c\|g\|t/N/g' \
+	  | jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
+	  -o database /dev/fd/0
+
+  else
+  
+      echo "WARNING: dustmasker not found, database will not be masked for low-complexity regions."
+      find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
+	  xargs -0 cat \
+	  | jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
+	  -o database /dev/fd/0
+
+  fi
+  
   # Merge only if necessary
   if [ -e "database_1" ]
   then
