@@ -65,6 +65,11 @@ read the paragraph about MiniKraken, below.
     sort of development package installed will have all of the above
     listed programs and libraries available.
 
+    Kraken will use the program [dustmasker] when installed to mask 
+    low-complexity regions of library sequences to reduce the number of 
+    false-positive hits. This is highly recommended. [dustmasker] is 
+    bundled with NCBI BLAST.
+
     Finally, if you want to build your own database, you will need to
     install the [Jellyfish] $k$-mer counter.  Note that Kraken only
     supports use of Jellyfish version 1.  Jellyfish version 2 is not
@@ -86,7 +91,7 @@ read the paragraph about MiniKraken, below.
     required for this database is also only 4 GB.
 
 [Jellyfish]:  http://www.cbcb.umd.edu/software/jellyfish/
-
+[dustmasker]: https://www.ncbi.nlm.nih.gov/books/NBK279681/
 
 Installation
 ============
