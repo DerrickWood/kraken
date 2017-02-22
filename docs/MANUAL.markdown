@@ -459,6 +459,13 @@ To build a custom database:
     size (in GB) for the database.  This allows you to create a MiniKraken
     database without having to create a full Kraken database first.
 
+5) Turning off low-complexity masking: Kraken will by default use the 
+    program `dustmasker` (bundled with NCBI BLAST) if installed and in the
+    system path to mask low-complexity regions of library sequences, 
+    which is the primary source of false positive hits. If you do not 
+    want the library sequences to be masked, you can provide the 
+    `--no-mask` option to disable masking.
+
 A full list of options for `kraken-build` can be obtained using
 `kraken-build --help`.
 

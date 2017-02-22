@@ -76,8 +76,7 @@ else
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
-
-  if which dustmasker > /dev/null
+  if [ -z "$KRAKEN_NO_MASK" ] && which dustmasker > /dev/null
   then
       
       find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
@@ -88,8 +87,10 @@ else
 	  -o database /dev/fd/0
 
   else
-  
-      echo "WARNING: dustmasker not found, database will not be masked for low-complexity regions."
+        
+      [ -z "$KRAKEN_NO_MASK" ] \
+	  && echo "WARNING: dustmasker not found, database will not be masked for low-complexity regions."
+
       find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
 	  xargs -0 cat \
 	  | jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
