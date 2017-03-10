@@ -43,7 +43,6 @@ case "$1" in
       wget -N $FTP_SERVER/refseq/release/bacteria/*.$EXTENSION
       echo -n "Unpacking..."
       gunzip *.$EXTENSION
-      rm *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
@@ -58,7 +57,6 @@ case "$1" in
       wget -N $FTP_SERVER/refseq/release/plasmid/*.$EXTENSION
       echo -n "Unpacking..."
       gunzip *.$EXTENSION
-      rm *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
@@ -73,7 +71,6 @@ case "$1" in
       wget -N $FTP_SERVER/refseq/release/viral/*.$EXTENSION
       echo -n "Unpacking..."
       gunzip *.$EXTENSION
-      rm *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
