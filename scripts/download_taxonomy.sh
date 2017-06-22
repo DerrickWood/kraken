@@ -31,25 +31,11 @@ THIS_DIR=$PWD
 mkdir -p "$TAXONOMY_DIR"
 cd "$TAXONOMY_DIR"
 
-if [ ! -e "gimap.dlflag" ]
-then
-  wget $FTP_SERVER/pub/taxonomy/gi_taxid_nucl.dmp.gz
-  touch gimap.dlflag
-  echo "Downloaded GI to taxon map"
-fi
-
 if [ ! -e "taxdump.dlflag" ]
 then
   wget $FTP_SERVER/pub/taxonomy/taxdump.tar.gz
   touch taxdump.dlflag
   echo "Downloaded taxonomy tree data"
-fi
-
-if [ ! -e "gimap.flag" ]
-then
-  gunzip gi_taxid_nucl.dmp.gz
-  touch gimap.flag
-  echo "Uncompressed GI to taxon map"
 fi
 
 if [ ! -e "taxdump.flag" ]
