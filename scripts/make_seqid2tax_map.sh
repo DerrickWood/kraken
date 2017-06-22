@@ -28,6 +28,5 @@ while read line; do
             header=`echo $header | cut -d ' ' -f 1`
             echo -e "${header:1}\t$taxid" >> $seqid2tax
         done 
-        exit
     esac
 done < $assembly_summary
