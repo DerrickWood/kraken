@@ -31,7 +31,30 @@ LIBRARY_DIR="$KRAKEN_DB_NAME/library"
 NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
+SEQ2TAXID="seqid2taxid.map"
 THIS_DIR=$PWD
+
+function download {
+  # Parse samples into a file that rsync can use
+  make_rsync_file.sh assembly_summary.txt rsync_listing.txt
+
+  # Download the files
+  echo -n "Downloading..."
+  rsync -q -vai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes .
+  echo " complete."
+
+  # Unpack the files
+  echo -n "Unpacking..."
+  gunzip *_genomic.fna.gz
+  echo " complete."
+}
+
+function seqid2taxid {
+  # Map the headers to taxid
+  echo -n "Mapping seqid to taxid..."
+  make_seqid2tax_map.sh assembly_summary.txt . ../../$SEQ2TAXID
+  echo " complete."
+}
 
 case "$1" in
   "bacteria")
@@ -39,18 +62,18 @@ case "$1" in
     cd $LIBRARY_DIR/Bacteria
     if [ ! -e "lib.complete" ]
     then
-      rm -f all.fna.tar.gz
-      wget $FTP_SERVER/genomes/archive/old_refseq/Bacteria/all.fna.tar.gz
-      echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      rm all.fna.tar.gz
-      echo " complete."
+      # Get the summary file
+      wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
+      download
+      seqid2taxid
       touch "lib.complete"
     else
       echo "Skipping download of bacterial genomes, already downloaded here."
     fi
     ;;
   "plasmids")
+    echo "ERROR: plasmids are depricated"
+    exit 1
     mkdir -p $LIBRARY_DIR/Plasmids
     cd $LIBRARY_DIR/Plasmids
     if [ ! -e "lib.complete" ]
@@ -71,16 +94,9 @@ case "$1" in
     cd $LIBRARY_DIR/Viruses
     if [ ! -e "lib.complete" ]
     then
-      rm -f all.fna.tar.gz
-      rm -f all.ffn.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.ffn.tar.gz
-      echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      tar zxf all.ffn.tar.gz
-      rm all.fna.tar.gz
-      rm all.ffn.tar.gz
-      echo " complete."
+      # Get the summary file
+      wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt
+      download
       touch "lib.complete"
     else
       echo "Skipping download of viral genomes, already downloaded here."

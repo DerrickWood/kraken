@@ -154,33 +154,6 @@ else
   echo "K-mer set sorted. [$(report_time_elapsed $start_time1)]"
 fi
 
-if [ -e "gi2seqid.map" ]
-then
-  echo "Skipping step 4, GI number to seqID map already complete."
-else
-  echo "Creating GI number to seqID map (step 4 of 6)..."
-  start_time1=$(date "+%s.%N")
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-    xargs -0 cat | report_gi_numbers.pl > gi2seqid.map.tmp
-  mv gi2seqid.map.tmp gi2seqid.map
-
-  echo "GI number to seqID map created. [$(report_time_elapsed $start_time1)]"
-fi
-
-if [ -e "seqid2taxid.map" ]
-then
-  echo "Skipping step 5, seqID to taxID map already complete."
-else
-  echo "Creating seqID to taxID map (step 5 of 6)..."
-  start_time1=$(date "+%s.%N")
-  make_seqid_to_taxid_map taxonomy/gi_taxid_nucl.dmp gi2seqid.map \
-    > seqid2taxid.map.tmp
-  mv seqid2taxid.map.tmp seqid2taxid.map
-  line_ct=$(wc -l seqid2taxid.map | awk '{print $1}')
-
-  echo "$line_ct sequences mapped to taxa. [$(report_time_elapsed $start_time1)]"
-fi
-
 if [ -e "lca.complete" ]
 then
   echo "Skipping step 6, LCAs already set."
