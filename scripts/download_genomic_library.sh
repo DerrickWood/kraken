@@ -36,10 +36,12 @@ THIS_DIR=$PWD
 
 function download {
   # Parse samples into a file that rsync can use
+  echo -n "Preparing download list..."
   make_rsync_file.sh assembly_summary.txt rsync_listing.txt
+  echo " complete."
 
   # Download the files
-  echo -n "Downloading..."
+  echo -n "Downloading `cat rsync_listing.txt|wc -l` files..."
   rsync -q -vai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes .
   echo " complete."
 
@@ -97,6 +99,7 @@ case "$1" in
       # Get the summary file
       wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt
       download
+      seqid2taxid
       touch "lib.complete"
     else
       echo "Skipping download of viral genomes, already downloaded here."
