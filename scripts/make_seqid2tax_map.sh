@@ -25,7 +25,8 @@ while read line; do
         # Read all headers
         grep '^>' < $fasta |
         while read header; do
-            echo -e "${header#>}\t$taxid" >> seqid2tax
+            header=`echo $header | cut -d ' ' -f 1`
+            echo -e "${header:1}\t$taxid" >> $seqid2tax
         done 
         exit
     esac
