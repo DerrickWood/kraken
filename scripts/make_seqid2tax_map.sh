@@ -20,10 +20,10 @@ while read line; do
         ftp_path=`echo -e "$line" | cut -f 20`
         taxid=`echo -e "$line" | cut -f 6`
         sample=`basename $ftp_path`
-        fasta=$folder/$sample${EXTENSION%.gz}
+        fasta=$folder/$sample${EXTENSION}
 
         # Read all headers
-        grep '^>' < $fasta |
+        zcat $fasta | grep '^>' |
         while read header; do
             header=`echo $header | cut -d ' ' -f 1`
             echo -e "${header:1}\t$taxid" >> $seqid2tax

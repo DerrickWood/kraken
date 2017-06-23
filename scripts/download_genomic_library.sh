@@ -42,12 +42,7 @@ function download {
 
   # Download the files
   echo -n "Downloading `cat rsync_listing.txt|wc -l` files..."
-  rsync -q -vai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes .
-  echo " complete."
-
-  # Unpack the files
-  echo -n "Unpacking..."
-  gunzip *_genomic.fna.gz
+  rsync -vai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes .
   echo " complete."
 }
 
