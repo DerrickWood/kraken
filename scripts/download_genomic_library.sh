@@ -29,10 +29,12 @@ set -e  # Stop on error
 
 LIBRARY_DIR="$KRAKEN_DB_NAME/library"
 NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
+
 FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 SEQ2TAXID="seqid2taxid.map"
 THIS_DIR=$PWD
+RSYNC="rsync --progress -ai --no-relative"
 
 # Just for the pretty printing of rsync progress
 function sameline {
@@ -49,7 +51,7 @@ function download {
 
   # Download the files
   echo "Downloading `cat rsync_listing.txt|wc -l` files..."
-  rsync --progress -ai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes . | sameline
+  $RSYNC --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes . | sameline
   echo "Downloading `cat rsync_listing.txt|wc -l` files... complete."
 }
 
@@ -113,20 +115,22 @@ case "$1" in
     if [ ! -e "lib.complete" ]
     then
       # get list of CHR_* directories
-      wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/
-      directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
-      rm .listing
-
-      # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
-      for directory in $directories
-      do
-        wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/$directory/
-        file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\S+\.fa\.gz)\s*$/ and print $1' .listing)
-        [ -z "$file" ] && exit 1
-        rm .listing
-        wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
-        gunzip "$file"
+      echo "Downloading human sequences..."
+      $RSYNC rsync://ftp.ncbi.nlm.nih.gov/genomes/Homo_sapiens/CHR_*/hs_ref_GRCh38.p7_*.fa.gz .
+      echo " complete."
+      # We know all sequences are human, so we can cheat and assigne the taxid
+      # here directly
+      human_taxid=9606
+      echo -n "Mapping seqid to taxid..."
+      for file in hs_ref_GRCh38.p7_*.fa.gz; do
+        zcat $file | grep '^>' |
+          while read header; do
+            header=`echo $header | cut -d ' ' -f 1`
+            echo -e "${header:1}\t$human_taxid" >> ../../$SEQ2TAXID
+          done
       done
+
+      echo " complete."
 
       touch "lib.complete"
     else
