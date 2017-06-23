@@ -34,6 +34,13 @@ RSYNC_SERVER="rsync://$NCBI_SERVER"
 SEQ2TAXID="seqid2taxid.map"
 THIS_DIR=$PWD
 
+# Just for the pretty printing of rsync progress
+function sameline {
+    while read line; do
+        echo -ne "$line\r"
+    done
+    echo -e "\r"
+}
 function download {
   # Parse samples into a file that rsync can use
   echo -n "Preparing download list..."
@@ -41,9 +48,9 @@ function download {
   echo " complete."
 
   # Download the files
-  echo -n "Downloading `cat rsync_listing.txt|wc -l` files..."
-  rsync -vai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes .
-  echo " complete."
+  echo "Downloading `cat rsync_listing.txt|wc -l` files..."
+  rsync --progress -ai --no-relative --files-from=rsync_listing.txt ftp.ncbi.nlm.nih.gov::genomes . | sameline
+  echo "Downloading `cat rsync_listing.txt|wc -l` files... complete."
 }
 
 function seqid2taxid {
