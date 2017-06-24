@@ -18,11 +18,13 @@
 # along with Kraken.  If not, see <http://www.gnu.org/licenses/>.
 
 # Download specific genomic libraries for use with Kraken.
-# Supported choices are:
-#   bacteria - NCBI RefSeq complete bacterial/archaeal genomes
-#   plasmids - NCBI RefSeq plasmid sequences
-#   viruses - NCBI RefSeq complete viral DNA and RNA genomes
+# Supported choices are the folder (NOT LINKS) here:
+# ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/
+# and also:
 #   human - NCBI RefSeq GRCh38 human reference genome
+
+# Please note: This script does not check if the specified library is valid
+# This is left for the kraken-build script
 
 set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
@@ -34,7 +36,8 @@ FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 SEQ2TAXID="seqid2taxid.map"
 THIS_DIR=$PWD
-RSYNC="rsync --progress -ai --no-relative"
+
+RSYNC="rsync --progress -ai --no-relative --delete --force"
 
 # Just for the pretty printing of rsync progress
 function sameline {
@@ -43,6 +46,7 @@ function sameline {
     done
     echo -e "\r"
 }
+
 function download {
   # Parse samples into a file that rsync can use
   echo -n "Preparing download list..."
@@ -63,82 +67,37 @@ function seqid2taxid {
 }
 
 case "$1" in
-  "bacteria")
-    mkdir -p $LIBRARY_DIR/Bacteria
-    cd $LIBRARY_DIR/Bacteria
-    if [ ! -e "lib.complete" ]
-    then
-      # Get the summary file
-      wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt
-      download
-      seqid2taxid
-      touch "lib.complete"
-    else
-      echo "Skipping download of bacterial genomes, already downloaded here."
-    fi
-    ;;
-  "plasmids")
-    echo "ERROR: plasmids are depricated"
-    exit 1
-    mkdir -p $LIBRARY_DIR/Plasmids
-    cd $LIBRARY_DIR/Plasmids
-    if [ ! -e "lib.complete" ]
-    then
-      rm -f plasmids.all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Plasmids/plasmids.all.fna.tar.gz
-      echo -n "Unpacking..."
-      tar zxf plasmids.all.fna.tar.gz
-      rm plasmids.all.fna.tar.gz
-      echo " complete."
-      touch "lib.complete"
-    else
-      echo "Skipping download of plasmids, already downloaded here."
-    fi
-    ;;
-  "viruses")
-    mkdir -p $LIBRARY_DIR/Viruses
-    cd $LIBRARY_DIR/Viruses
-    if [ ! -e "lib.complete" ]
-    then
-      # Get the summary file
-      wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/viral/assembly_summary.txt
-      download
-      seqid2taxid
-      touch "lib.complete"
-    else
-      echo "Skipping download of viral genomes, already downloaded here."
-    fi
-    ;;
   "human")
-    mkdir -p $LIBRARY_DIR/Human
-    cd $LIBRARY_DIR/Human
-    if [ ! -e "lib.complete" ]
-    then
-      # get list of CHR_* directories
-      echo "Downloading human sequences..."
-      $RSYNC rsync://ftp.ncbi.nlm.nih.gov/genomes/Homo_sapiens/CHR_*/hs_ref_GRCh38.p7_*.fa.gz .
-      echo " complete."
-      # We know all sequences are human, so we can cheat and assigne the taxid
-      # here directly
-      human_taxid=9606
-      echo -n "Mapping seqid to taxid..."
-      for file in hs_ref_GRCh38.p7_*.fa.gz; do
-        zcat $file | grep '^>' |
-          while read header; do
-            header=`echo $header | cut -d ' ' -f 1`
-            echo -e "${header:1}\t$human_taxid" >> ../../$SEQ2TAXID
-          done
-      done
+    # Humans are a special case
+    mkdir -p $LIBRARY_DIR/human
+    cd $LIBRARY_DIR/human
+    echo "Downloading human sequences..."
+    $RSYNC rsync://ftp.ncbi.nlm.nih.gov/genomes/Homo_sapiens/CHR_*/hs_ref_GRCh38.p7_*.fa.gz .
+    echo " complete."
 
-      echo " complete."
+    # We know all sequences are human, so we can cheat and 
+    # assign the taxid here directly
+    human_taxid=9606
+    echo -n "Mapping seqid to taxid..."
+    for file in hs_ref_GRCh38.p7_*.fa.gz; do
+      zcat $file | grep '^>' |
+        while read header; do
+          header=`echo $header | cut -d ' ' -f 1`
+          echo -e "${header:1}\t$human_taxid" >> ../../$SEQ2TAXID
+        done
+    done
 
-      touch "lib.complete"
-    else
-      echo "Skipping download of human genome, already downloaded here."
-    fi
+    echo " complete."
     ;;
   *)
-    echo "Unsupported library.  Valid options are: "
-    echo "  bacteria plasmids virus human"
+    mkdir -p $LIBRARY_DIR/$1
+    cd $LIBRARY_DIR/$1
+    wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/$1/assembly_summary.txt
+    #### DEBUG START ####
+    head -n 1000 assembly_summary.txt > t
+    mv t assembly_summary
+    #### DEBUG END ####
+    download
+    seqid2taxid
     ;;
 esac
