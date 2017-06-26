@@ -13,6 +13,10 @@ fi
 assembly_summary=$1
 folder=$2
 seqid2tax=$3
+
+# Empty the seqid2taxid file
+echo > $seqid2tax
+
 while read line; do
     case "$line" in \#*)
         continue;;

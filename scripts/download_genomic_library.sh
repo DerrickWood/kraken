@@ -62,7 +62,7 @@ function download {
 function seqid2taxid {
   # Map the headers to taxid
   echo -n "Mapping seqid to taxid..."
-  make_seqid2tax_map.sh assembly_summary.txt . ../../$SEQ2TAXID
+  make_seqid2tax_map.sh assembly_summary.txt . $SEQ2TAXID
   echo " complete."
 }
 
@@ -77,13 +77,17 @@ case "$1" in
 
     # We know all sequences are human, so we can cheat and 
     # assign the taxid here directly
+    
+    # Empty the seqid file
+    echo > $SEQ2TAXID
+
     human_taxid=9606
     echo -n "Mapping seqid to taxid..."
     for file in hs_ref_GRCh38.p7_*.fa.gz; do
       zcat $file | grep '^>' |
         while read header; do
           header=`echo $header | cut -d ' ' -f 1`
-          echo -e "${header:1}\t$human_taxid" >> ../../$SEQ2TAXID
+          echo -e "${header:1}\t$human_taxid" >> $SEQ2TAXID
         done
     done
 
@@ -94,8 +98,9 @@ case "$1" in
     cd $LIBRARY_DIR/$1
     wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/$1/assembly_summary.txt
     #### DEBUG START ####
-    head -n 1000 assembly_summary.txt > t
-    mv t assembly_summary
+    echo "WARNING: DEBUG ENABLED, DOWNLOADING ONLY 100 SAMPLES PER LIBRARY"
+    head -n 100 assembly_summary.txt > t
+    mv t assembly_summary.txt
     #### DEBUG END ####
     download
     seqid2taxid

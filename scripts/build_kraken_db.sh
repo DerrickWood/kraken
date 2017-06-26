@@ -154,6 +154,10 @@ else
   echo "K-mer set sorted. [$(report_time_elapsed $start_time1)]"
 fi
 
+echo -n "Concatenating seqid2taxid.map files (step 4 of 6)..."
+cat library/*/seqid2taxid.map > seqid2taxid.map
+echo " complete."
+
 if [ -e "lca.complete" ]
 then
   echo "Skipping step 6, LCAs already set."
