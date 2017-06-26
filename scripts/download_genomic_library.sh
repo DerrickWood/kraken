@@ -62,7 +62,7 @@ function download {
 function seqid2taxid {
   # Map the headers to taxid
   echo -n "Mapping seqid to taxid..."
-  make_seqid2tax_map.sh assembly_summary.txt . $SEQ2TAXID
+  make_seqid2tax_map.py assembly_summary.txt . $SEQ2TAXID
   echo " complete."
 }
 
