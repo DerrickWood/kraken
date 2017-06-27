@@ -28,12 +28,14 @@ NCBI_SERVER="ftp.ncbi.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
 THIS_DIR=$PWD
 
+RSYNC="rsync --progress -ai --no-relative"
+
 mkdir -p "$TAXONOMY_DIR"
 cd "$TAXONOMY_DIR"
 
 if [ ! -e "taxdump.dlflag" ]
 then
-  wget $FTP_SERVER/pub/taxonomy/taxdump.tar.gz
+  $RSYNC $FTP_SERVER/pub/taxonomy/taxdump.tar.gz
   touch taxdump.dlflag
   echo "Downloaded taxonomy tree data"
 fi

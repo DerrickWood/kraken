@@ -96,7 +96,7 @@ case "$1" in
   *)
     mkdir -p $LIBRARY_DIR/$1
     cd $LIBRARY_DIR/$1
-    wget -q ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/$1/assembly_summary.txt
+    $RSYNC ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/$1/assembly_summary.txt
     #### DEBUG START ####
     echo "WARNING: DEBUG ENABLED, DOWNLOADING ONLY 100 SAMPLES PER LIBRARY"
     head -n 100 assembly_summary.txt > t
