@@ -30,29 +30,33 @@ using namespace kraken;
 
 void parse_command_line(int argc, char **argv);
 void usage(int exit_code=EX_USAGE);
-void process_file(char *filename);
+void process_file(char *filename, ostream* kraken_output);
 void classify_sequence(DNASequence &dna, ostringstream &koss,
                        ostringstream &coss, ostringstream &uoss);
 string hitlist_string(vector<uint32_t> &taxa, vector<uint8_t> &ambig);
 set<uint32_t> get_ancestry(uint32_t taxon);
+double elapsed_seconds(struct timeval time1, struct timeval time2);
 void report_stats(struct timeval time1, struct timeval time2);
 
 int Num_threads = 1;
 string DB_filename, Index_filename, Nodes_filename;
+size_t DB_size = 0;
+size_t Index_size = 0;
+bool Pipe_DB = false;
 bool Quick_mode = false;
 bool Fastq_input = false;
 bool Print_classified = false;
 bool Print_unclassified = false;
-bool Print_kraken = true;
 bool Populate_memory = false;
 bool Only_classified_kraken_output = false;
 uint32_t Minimum_hit_count = 1;
 map<uint32_t, uint32_t> Parent_map;
 KrakenDB Database;
-string Classified_output_file, Unclassified_output_file, Kraken_output_file;
+string Classified_output_file, Unclassified_output_file;
+vector<string> Kraken_output_files;
 ostream *Classified_output;
 ostream *Unclassified_output;
-ostream *Kraken_output;
+vector<ostream *> Kraken_outputs;
 size_t Work_unit_size = DEF_WORK_UNIT_SIZE;
 
 uint64_t total_classified = 0;
@@ -68,25 +72,71 @@ int main(int argc, char **argv) {
   if (! Nodes_filename.empty())
     Parent_map = build_parent_map(Nodes_filename);
 
-  if (Populate_memory)
-    cerr << "Loading database... ";
+  struct timeval dtv1, dtv2;
+  gettimeofday(&dtv1, NULL);
 
   QuickFile db_file;
-  db_file.open_file(DB_filename);
-  if (Populate_memory)
-    db_file.load_file();
-  Database = KrakenDB(db_file.ptr());
+  if (!Pipe_DB) {
+    if (Populate_memory)
+      cerr << "Loading database... ";
+
+    db_file.open_file(DB_filename);
+    if (Populate_memory)
+      db_file.load_file();
+    Database = KrakenDB(db_file.ptr());
+  } else {
+    ifstream in(DB_filename.c_str(), ios::in | ios::binary);
+    if (!in) {
+      cerr << "Couldn't open file " << DB_filename;
+      exit(EXIT_FAILURE);
+    }
+    char* buffer;
+    if (DB_size > 0) {
+      buffer = (char*) malloc(DB_size);
+      in.read(buffer, DB_size);
+    } else {
+      string db_string((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
+      buffer = (char*)db_string.c_str();
+    }
+    Database = KrakenDB(buffer);
+  }
+
   KmerScanner::set_k(Database.get_k());
 
+  KrakenDBIndex db_index;
   QuickFile idx_file;
-  idx_file.open_file(Index_filename);
-  if (Populate_memory)
-    idx_file.load_file();
-  KrakenDBIndex db_index(idx_file.ptr());
+  if (!Pipe_DB) {
+    idx_file.open_file(Index_filename);
+    if (Populate_memory)
+      idx_file.load_file();
+    db_index = KrakenDBIndex(idx_file.ptr());
+  } else {
+    ifstream in(Index_filename.c_str(), ios::in | ios::binary);
+    if (!in) {
+      cerr << "Couldn't open file " << Index_filename;
+      exit(EXIT_FAILURE);
+    }
+    char* buffer;
+    if (Index_size > 0) {
+      buffer = (char*) malloc(Index_size);
+      in.read(buffer, Index_size);
+    } else {
+      string index_string((istreambuf_iterator<char>(in)), istreambuf_iterator<char>());
+      buffer = (char*) index_string.c_str();
+    }
+    db_index = KrakenDBIndex(buffer);
+  }
+
   Database.set_index(&db_index);
 
   if (Populate_memory)
     cerr << "complete." << endl;
+
+  gettimeofday(&dtv2, NULL);
+  double seconds = elapsed_seconds(dtv1, dtv2);
+  fprintf(stderr,
+          "database loaded in %dm %.2fs. \n",
+          (int) seconds / 60,  fmod(seconds, 60));
 
   if (Print_classified) {
     if (Classified_output_file == "-")
@@ -102,27 +152,47 @@ int main(int argc, char **argv) {
       Unclassified_output = new ofstream(Unclassified_output_file.c_str());
   }
 
-  if (! Kraken_output_file.empty()) {
-    if (Kraken_output_file == "-")
-      Print_kraken = false;
-    else
-      Kraken_output = new ofstream(Kraken_output_file.c_str());
+  for (vector<string>::iterator it = Kraken_output_files.begin(); it != Kraken_output_files.end(); ++it) {
+    if (*it == "-") {
+      Kraken_outputs.push_back(&cout);
+    } else {
+      ostream* kraken_output = new ofstream((*it).c_str());
+      Kraken_outputs.push_back(kraken_output);
+    }
   }
-  else
-    Kraken_output = &cout;
 
-  struct timeval tv1, tv2;
-  gettimeofday(&tv1, NULL);
-  for (int i = optind; i < argc; i++)
-    process_file(argv[i]);
-  gettimeofday(&tv2, NULL);
+  size_t n_inputs = argc - optind;
+  size_t n_outputs = Kraken_outputs.size();
+  if (n_outputs && n_inputs != n_outputs) {
+    cerr << "Number of output files doesn't match inputs";
+    exit(EXIT_FAILURE);
+  }
 
-  report_stats(tv1, tv2);
+  int j = 0;
+  for (int i = optind; i < argc; i++) {
+    struct timeval tv1, tv2;
+    gettimeofday(&tv1, NULL);
+
+    total_classified = 0;
+    total_sequences = 0;
+    total_bases = 0;
+    ostream* kraken_output;
+    if (!n_outputs) {
+      kraken_output = &cout;
+    } else {
+      kraken_output = Kraken_outputs[j];
+    }
+    process_file(argv[i], kraken_output);
+    j++;
+    gettimeofday(&tv2, NULL);
+
+    report_stats(tv1, tv2);
+  }
 
   return 0;
 }
 
-void report_stats(struct timeval time1, struct timeval time2) {
+double elapsed_seconds(struct timeval time1, struct timeval time2) {
   time2.tv_usec -= time1.tv_usec;
   time2.tv_sec -= time1.tv_sec;
   if (time2.tv_usec < 0) {
@@ -132,10 +202,15 @@ void report_stats(struct timeval time1, struct timeval time2) {
   double seconds = time2.tv_usec;
   seconds /= 1e6;
   seconds += time2.tv_sec;
+  return seconds;
+}
+
+void report_stats(struct timeval time1, struct timeval time2) {
+  double seconds = elapsed_seconds(time1, time2);
 
   if (isatty(fileno(stderr)))
     cerr << "\r";
-  fprintf(stderr, 
+  fprintf(stderr,
           "%llu sequences (%.2f Mbp) processed in %.3fs (%.1f Kseq/m, %.2f Mbp/m).\n",
           (unsigned long long) total_sequences, total_bases / 1.0e6, seconds,
           total_sequences / 1.0e3 / (seconds / 60),
@@ -147,7 +222,7 @@ void report_stats(struct timeval time1, struct timeval time2) {
           (total_sequences - total_classified) * 100.0 / total_sequences);
 }
 
-void process_file(char *filename) {
+void process_file(char *filename, ostream* kraken_output) {
   string file_str(filename);
   DNASequenceReader *reader;
   DNASequence dna;
@@ -177,7 +252,7 @@ void process_file(char *filename) {
       }
       if (total_nt == 0)
         break;
-      
+
       kraken_output_ss.str("");
       classified_output_ss.str("");
       unclassified_output_ss.str("");
@@ -187,8 +262,7 @@ void process_file(char *filename) {
 
       #pragma omp critical(write_output)
       {
-        if (Print_kraken)
-          (*Kraken_output) << kraken_output_ss.str();
+        (*kraken_output) << kraken_output_ss.str();
         if (Print_classified)
           (*Classified_output) << classified_output_ss.str();
         if (Print_unclassified)
@@ -202,8 +276,7 @@ void process_file(char *filename) {
   }  // end parallel section
 
   delete reader;
-  if (Print_kraken)
-    (*Kraken_output) << std::flush;
+  (*kraken_output) << std::flush;
   if (Print_classified)
     (*Classified_output) << std::flush;
   if (Print_unclassified)
@@ -274,9 +347,6 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
       }
     }
   }
-
-  if (! Print_kraken)
-    return;
 
   if (call) {
     koss << "C\t";
@@ -354,13 +424,22 @@ void parse_command_line(int argc, char **argv) {
 
   if (argc > 1 && strcmp(argv[1], "-h") == 0)
     usage(0);
-  while ((opt = getopt(argc, argv, "d:i:t:u:n:m:o:qfcC:U:M")) != -1) {
+  while ((opt = getopt(argc, argv, "d:i:D:I:t:u:n:m:o:pqfcC:U:M")) != -1) {
     switch (opt) {
       case 'd' :
         DB_filename = optarg;
         break;
       case 'i' :
         Index_filename = optarg;
+        break;
+      case 'D' :
+        DB_size = atoll(optarg);
+        break;
+      case 'I' :
+        Index_size = atoll(optarg);
+        break;
+      case 'p' :
+        Pipe_DB = true;
         break;
       case 't' :
         sig = atoll(optarg);
@@ -400,7 +479,7 @@ void parse_command_line(int argc, char **argv) {
         Unclassified_output_file = optarg;
         break;
       case 'o' :
-        Kraken_output_file = optarg;
+        Kraken_output_files.push_back(optarg);
         break;
       case 'u' :
         sig = atoll(optarg);
@@ -440,6 +519,9 @@ void usage(int exit_code) {
        << "Options: (*mandatory)" << endl
        << "* -d filename      Kraken DB filename" << endl
        << "* -i filename      Kraken DB index filename" << endl
+       << "  -D filename      Kraken DB size" << endl
+       << "  -I filename      Kraken DB index size" << endl
+       << "  -p               Kraken DB are pipes" << endl
        << "  -n filename      NCBI Taxonomy nodes file" << endl
        << "  -o filename      Output file for Kraken output" << endl
        << "  -t #             Number of threads" << endl

@@ -33,9 +33,11 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <cmath>
 #include <omp.h>
 #include <set>
 #include <sstream>
+#include <streambuf>
 #include <stdint.h>
 #include <string.h>
 #include <string>
