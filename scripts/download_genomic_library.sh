@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -19,9 +19,10 @@
 
 # Download specific genomic libraries for use with Kraken.
 # Supported choices are:
-#   bacteria - NCBI RefSeq complete bacterial/archaeal genomes
+#   archaea - NCBI RefSeq complete archaeal genomes
+#   bacteria - NCBI RefSeq complete bacterial genomes
 #   plasmids - NCBI RefSeq plasmid sequences
-#   viruses - NCBI RefSeq complete viral DNA and RNA genomes
+#   viral - NCBI RefSeq complete viral DNA and RNA genomes
 #   human - NCBI RefSeq GRCh38 human reference genome
 
 set -u  # Protect against uninitialized vars.
@@ -33,87 +34,44 @@ FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 THIS_DIR=$PWD
 
+library_name="$1"
+library_file="library.fna"
 case "$1" in
-  "bacteria")
-    mkdir -p $LIBRARY_DIR/Bacteria
-    cd $LIBRARY_DIR/Bacteria
-    if [ ! -e "lib.complete" ]
-    then
-      rm -f all.fna.tar.gz
-      wget $FTP_SERVER/genomes/archive/old_refseq/Bacteria/all.fna.tar.gz
-      echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      rm all.fna.tar.gz
-      echo " complete."
-      touch "lib.complete"
-    else
-      echo "Skipping download of bacterial genomes, already downloaded here."
+  "archaea" | "bacteria" | "viral" | "human" )
+    mkdir -p $LIBRARY_DIR/$library_name
+    cd $LIBRARY_DIR/$library_name
+    rm -f assembly_summary.txt
+    remote_dir_name=$library_name
+    if [ "$library_name" = "human" ]; then
+      remote_dir_name="vertebrate_mammalian/Homo_sapiens"
     fi
+    if ! wget -q $FTP_SERVER/genomes/refseq/$remote_dir_name/assembly_summary.txt; then
+      echo "Error downloading assembly summary file for $library_name, exiting." >/dev/fd/2
+      exit 1
+    fi
+    if [ "$library_name" = "human" ]; then
+      grep "Genome Reference Consortium" assembly_summary.txt > x
+      mv x assembly_summary.txt
+    fi
+    rm -rf all/ library.f* manifest.txt rsync.err
+    rsync_from_ncbi.pl assembly_summary.txt
+    scan_fasta_file.pl $library_file >> prelim_map.txt
     ;;
-  "plasmids")
-    mkdir -p $LIBRARY_DIR/Plasmids
-    cd $LIBRARY_DIR/Plasmids
-    if [ ! -e "lib.complete" ]
-    then
-      rm -f plasmids.all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Plasmids/plasmids.all.fna.tar.gz
-      echo -n "Unpacking..."
-      tar zxf plasmids.all.fna.tar.gz
-      rm plasmids.all.fna.tar.gz
-      echo " complete."
-      touch "lib.complete"
-    else
-      echo "Skipping download of plasmids, already downloaded here."
-    fi
-    ;;
-  "viruses")
-    mkdir -p $LIBRARY_DIR/Viruses
-    cd $LIBRARY_DIR/Viruses
-    if [ ! -e "lib.complete" ]
-    then
-      rm -f all.fna.tar.gz
-      rm -f all.ffn.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.ffn.tar.gz
-      echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      tar zxf all.ffn.tar.gz
-      rm all.fna.tar.gz
-      rm all.ffn.tar.gz
-      echo " complete."
-      touch "lib.complete"
-    else
-      echo "Skipping download of viral genomes, already downloaded here."
-    fi
-    ;;
-  "human")
-    mkdir -p $LIBRARY_DIR/Human
-    cd $LIBRARY_DIR/Human
-    if [ ! -e "lib.complete" ]
-    then
-      # get list of CHR_* directories
-      wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/
-      directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
-      rm .listing
-
-      # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
-      for directory in $directories
-      do
-        wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/$directory/
-        file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\S+\.fa\.gz)\s*$/ and print $1' .listing)
-        [ -z "$file" ] && exit 1
-        rm .listing
-        wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
-        gunzip "$file"
-      done
-
-      touch "lib.complete"
-    else
-      echo "Skipping download of human genome, already downloaded here."
-    fi
+  "plasmid")
+    mkdir -p $LIBRARY_DIR/plasmid
+    cd $LIBRARY_DIR/plasmid
+    rm -f library.f* plasmid.*
+    echo -n "Downloading plasmid files from FTP..."
+    wget -q --no-remove-listing --spider $FTP_SERVER/genomes/refseq/plasmid/
+    awk '{ print $NF }' .listing | perl -ple 'tr/\r//d' | grep '\.fna\.gz' > manifest.txt
+    cat manifest.txt | xargs -n1 -I{} wget -q $FTP_SERVER/genomes/refseq/plasmid/{}
+    cat manifest.txt | xargs -n1 -I{} gunzip -c {} > $library_file
+    rm -f plasmid.* .listing
+    scan_fasta_file.pl $library_file > prelim_map.txt
+    echo " done."
     ;;
   *)
     echo "Unsupported library.  Valid options are: "
-    echo "  bacteria plasmids virus human"
+    echo "  archaea bacteria plasmid viral human"
     ;;
 esac
