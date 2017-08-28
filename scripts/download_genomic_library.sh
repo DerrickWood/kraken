@@ -28,10 +28,11 @@ set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
 
 LIBRARY_DIR="$KRAKEN_DB_NAME/library"
-NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
+NCBI_SERVER="ftp.ncbi.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
 RSYNC_SERVER="rsync://$NCBI_SERVER"
 THIS_DIR=$PWD
+EXTENSION=genomic.fna.gz
 
 case "$1" in
   "bacteria")
@@ -39,11 +40,9 @@ case "$1" in
     cd $LIBRARY_DIR/Bacteria
     if [ ! -e "lib.complete" ]
     then
-      rm -f all.fna.tar.gz
-      wget $FTP_SERVER/genomes/archive/old_refseq/Bacteria/all.fna.tar.gz
+      wget -N $FTP_SERVER/refseq/release/bacteria/*.$EXTENSION
       echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      rm all.fna.tar.gz
+      gunzip *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
@@ -55,11 +54,9 @@ case "$1" in
     cd $LIBRARY_DIR/Plasmids
     if [ ! -e "lib.complete" ]
     then
-      rm -f plasmids.all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Plasmids/plasmids.all.fna.tar.gz
+      wget -N $FTP_SERVER/refseq/release/plasmid/*.$EXTENSION
       echo -n "Unpacking..."
-      tar zxf plasmids.all.fna.tar.gz
-      rm plasmids.all.fna.tar.gz
+      gunzip *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
@@ -71,15 +68,9 @@ case "$1" in
     cd $LIBRARY_DIR/Viruses
     if [ ! -e "lib.complete" ]
     then
-      rm -f all.fna.tar.gz
-      rm -f all.ffn.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.fna.tar.gz
-      wget $FTP_SERVER/genomes/Viruses/all.ffn.tar.gz
+      wget -N $FTP_SERVER/refseq/release/viral/*.$EXTENSION
       echo -n "Unpacking..."
-      tar zxf all.fna.tar.gz
-      tar zxf all.ffn.tar.gz
-      rm all.fna.tar.gz
-      rm all.ffn.tar.gz
+      gunzip *.$EXTENSION
       echo " complete."
       touch "lib.complete"
     else
@@ -91,23 +82,33 @@ case "$1" in
     cd $LIBRARY_DIR/Human
     if [ ! -e "lib.complete" ]
     then
-      # get list of CHR_* directories
-      wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/
-      directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
-      rm .listing
 
-      # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
-      for directory in $directories
-      do
-        wget --spider --no-remove-listing $FTP_SERVER/genomes/H_sapiens/$directory/
-        file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\S+\.fa\.gz)\s*$/ and print $1' .listing)
-        [ -z "$file" ] && exit 1
-        rm .listing
-        wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
-        gunzip "$file"
-      done
+	## Download all files in a single invocation to wget:
+	wget \
+	    --no-directories \
+	    --recursive \
+	    --level=2 \
+	    --accept "hs_ref_GRCh*.fa.gz" \
+	    $FTP_SERVER/genomes/Homo_sapiens/
 
-      touch "lib.complete"
+      # # get list of CHR_* directories
+      # wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/
+      # directories=$(perl -nle '/^d/ and /(CHR_\w+)\s*$/ and print $1' .listing)
+      # rm .listing
+
+      # # For each CHR_* directory, get GRCh* fasta gzip file name, d/l, unzip, and add
+      # for directory in $directories
+      # do
+      #   wget --spider --no-remove-listing $FTP_SERVER/genomes/Homo_sapiens/$directory/
+      #   file=$(perl -nle '/^-/ and /\b(hs_ref_GRCh\w+\.fa\.gz)\s*$/ and print $1' .listing)
+      #   [ -z "$file" ] && exit 1
+      #   rm .listing
+      #   wget $FTP_SERVER/genomes/H_sapiens/$directory/$file
+      #  gunzip *.gz
+      #done
+
+	gunzip *.gz
+	touch "lib.complete"
     else
       echo "Skipping download of human genome, already downloaded here."
     fi

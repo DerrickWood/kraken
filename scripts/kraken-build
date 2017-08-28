@@ -53,6 +53,7 @@ my (
   $max_db_size,
   $work_on_disk,
   $shrink_block_offset,
+  $no_mask,
 
   $dl_taxonomy,
   $dl_library,
@@ -98,6 +99,7 @@ GetOptions(
   "max-db-size=s", \$max_db_size,
   "work-on-disk", \$work_on_disk,
   "shrink-block-offset=i", \$shrink_block_offset,
+  "no-mask", \$no_mask,
 
   "download-taxonomy" => \$dl_taxonomy,
   "download-library=s" => \$dl_library,
@@ -152,13 +154,14 @@ if ($max_db_size !~ /^$/ && $max_db_size <= 0) {
   die "Can't have negative max database size.\n";
 }
 
-$ENV{"KRAKEN_DB_NAME"} = $db;
-$ENV{"KRAKEN_THREAD_CT"} = $threads;
+$ENV{"KRAKEN_DB_NAME"}       = $db;
+$ENV{"KRAKEN_THREAD_CT"}     = $threads;
 $ENV{"KRAKEN_MINIMIZER_LEN"} = $minimizer_len;
-$ENV{"KRAKEN_KMER_LEN"} = $kmer_len;
-$ENV{"KRAKEN_HASH_SIZE"} = $hash_size;
-$ENV{"KRAKEN_MAX_DB_SIZE"} = $max_db_size;
-$ENV{"KRAKEN_WORK_ON_DISK"} = $work_on_disk;
+$ENV{"KRAKEN_KMER_LEN"}      = $kmer_len;
+$ENV{"KRAKEN_HASH_SIZE"}     = $hash_size;
+$ENV{"KRAKEN_MAX_DB_SIZE"}   = $max_db_size;
+$ENV{"KRAKEN_WORK_ON_DISK"}  = $work_on_disk;
+$ENV{"KRAKEN_NO_MASK"}       = $no_mask;
 
 if ($dl_taxonomy) {
   download_taxonomy();
@@ -235,10 +238,13 @@ Options:
                              (default: 1)
   --work-on-disk             Perform most operations on disk rather than in
                              RAM (will slow down build in most cases)
+  --no-mask                  Do not use "dustmasker" to mask low-complexity 
+                             regions in library sequences.
+
 EOF
   exit $exit_code;
 }
-
+##'
 sub display_help {
   usage(0);
 }
