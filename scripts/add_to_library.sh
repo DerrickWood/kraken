@@ -41,7 +41,7 @@ scan_fasta_file.pl "$1" > "$add_dir/temp_map.txt"
 
 filename=$(cp_into_tempfile.pl -t "XXXXXXXXXX" -d "$add_dir" -s fna "$1")
 
-cat "$add_dir/temp_map.txt" >> "$KRAKEN_DB_NAME/taxonomy/prelim_map.txt"
+cat "$add_dir/temp_map.txt" >> "$add_dir/prelim_map.txt"
 rm "$add_dir/temp_map.txt"
 
 echo "Added \"$1\" to library ($KRAKEN_DB_NAME)"
