@@ -1,30 +1,41 @@
 #!/bin/bash
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
+#
+# Kraken is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Kraken is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Kraken.  If not, see <http://www.gnu.org/licenses/>.
 
 # Download NCBI taxonomy information for Kraken.
-# Designed to be called by kraken-build
+# Designed to be called by kraken_build
 
 set -u  # Protect against uninitialized vars.
 set -e  # Stop on error
 
 TAXONOMY_DIR="$KRAKEN_DB_NAME/taxonomy"
-NCBI_SERVER="ftp.ncbi.nlm.nih.gov"
+NCBI_SERVER="ftp.ncbi.nih.gov"
 FTP_SERVER="ftp://$NCBI_SERVER"
+THIS_DIR=$PWD
 
 mkdir -p "$TAXONOMY_DIR"
 cd "$TAXONOMY_DIR"
 
-if [ ! -e "accmap.dlflag" ]
+if [ ! -e "gimap.dlflag" ]
 then
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_est.accession2taxid.gz
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_gss.accession2taxid.gz
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz
-  touch accmap.dlflag
-  echo "Downloaded accession to taxon map(s)"
+  wget $FTP_SERVER/pub/taxonomy/gi_taxid_nucl.dmp.gz
+  touch gimap.dlflag
+  echo "Downloaded GI to taxon map"
 fi
 
 if [ ! -e "taxdump.dlflag" ]
@@ -34,17 +45,16 @@ then
   echo "Downloaded taxonomy tree data"
 fi
 
-if ls | grep -q 'accession2taxid\.gz$'
+if [ ! -e "gimap.flag" ]
 then
-  echo -n "Uncompressing taxonomy data... "
-  gunzip *accession2taxid.gz
-  echo "done."
+  gunzip gi_taxid_nucl.dmp.gz
+  touch gimap.flag
+  echo "Uncompressed GI to taxon map"
 fi
 
-if [ ! -e "taxdump.untarflag" ]
+if [ ! -e "taxdump.flag" ]
 then
-  echo -n "Untarring taxonomy tree data... "
   tar zxf taxdump.tar.gz
-  touch taxdump.untarflag
-  echo "done."
+  touch taxdump.flag
+  echo "Uncompressed taxonomy tree data"
 fi

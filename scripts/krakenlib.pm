@@ -1,6 +1,6 @@
 package krakenlib;
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -71,33 +71,6 @@ sub find_db {
   }
 
   return $db_prefix;
-}
-
-# Input: a FASTA sequence ID
-# Output: either (a) a taxonomy ID number found in the sequence ID,
-#   (b) an NCBI accession number found in the sequence ID, or undef
-sub check_seqid {
-  my $seqid = shift;
-  my $taxid = undef;
-  # Note all regexes here use ?: to avoid capturing the ^ or | character
-  if ($seqid =~ /(?:^|\|)kraken:taxid\|(\d+)/) {
-    $taxid = $1;  # OK, has explicit taxid
-  }
-  elsif ($seqid =~ /^(\d+)$/) {
-    $taxid = $1;  # OK, has explicit taxid (w/o token)
-  }
-  # Accession number check
-  elsif ($seqid =~ /(?:^|\|)         # Begins seqid or immediately follows pipe
-                     ([A-Z]+         # Starts with one or more UC alphas
-                        _?           # Might have an underscore next
-                        [A-Z0-9]+)   # Ends with UC alphas or digits
-                     (?:\||\b|\.)/x  # Followed by pipe, word boundary, or period
-        )
-  {
-    $taxid = $1;  # A bit misleading - failure to pass /^\d+$/ means this is
-                  # OK, but requires accession -> taxid mapping
-  }
-  return $taxid;
 }
 
 1;

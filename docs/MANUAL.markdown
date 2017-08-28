@@ -171,7 +171,7 @@ have some multi-threading enabled) in February 2015:
      7m48s  *Step 1 (create set)
        n/a   Step 2 (reduce database, optional and skipped)
     53m16s  *Step 3 (sort set)
-     1m04s   Step 4 (GI number to sequence ID map - now obsolete)
+     1m04s   Step 4 (GI number to sequence ID map)
      0m27s   Step 5 (Sequence ID to taxon map)
     29m20s  *Step 6 (set LCA values)
     ------
@@ -352,7 +352,7 @@ To build a custom database:
     
         kraken-build --download-taxonomy --db $DBNAME
 
-    This will download the accession number to taxon map, as well as the
+    This will download the GI number to taxon map, as well as the
     taxonomic name and tree information from NCBI.  These files can
     be found in `$DBNAME/taxonomy/` .  If you need to modify the taxonomy,
     edits can be made to the `names.dmp` and `nodes.dmp` files in this directory;
@@ -361,10 +361,9 @@ To build a custom database:
 2) Install a genomic library.  Four sets of standard genomes are
     made easily available through `kraken-build`:
 
-    - archaea: RefSeq complete archaeal genomes
-    - bacteria: RefSeq complete bacterial genomes
-    - plasmid: RefSeq plasmid sequences
-    - viral: RefSeq complete viral genomes
+    - bacteria: RefSeq complete bacterial/archaeal genomes
+    - plasmids: RefSeq plasmid sequences
+    - viruses: RefSeq complete viral genomes
     - human: GRCh38 human genome
 
     To download and install any one of these, use the `--download-library`
@@ -377,7 +376,7 @@ To build a custom database:
     - Sequences must be in a FASTA file (multi-FASTA is allowed)
     - Each sequence's ID (the string between the `>` and the first
       whitespace character on the header line) must contain either
-      an NCBI accession number to allow Kraken to lookup the correct taxa, or an
+      a GI number to allow Kraken to lookup the correct taxa, or an
       explicit assignment of the taxonomy ID using `kraken:taxid` (see below).
 
     Replicons not downloaded from NCBI may need their taxonomy information
@@ -391,7 +390,7 @@ To build a custom database:
 
     The `kraken:taxid` string must begin the sequence ID or be immediately
     preceded by a pipe character (`|`).  Explicit assignment of taxonomy IDs
-    in this manner will override the accession number mapping provided by NCBI.
+    in this manner will override the GI number mapping provided by NCBI.
 
     If your genomes meet the requirements above, then you can add each
     replicon to your database's genomic library using the `--add-to-library`

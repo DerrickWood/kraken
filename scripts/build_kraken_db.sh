@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -154,36 +154,29 @@ else
   echo "K-mer set sorted. [$(report_time_elapsed $start_time1)]"
 fi
 
-echo "Skipping step 4, GI number to seqID map now obsolete."
+if [ -e "gi2seqid.map" ]
+then
+  echo "Skipping step 4, GI number to seqID map already complete."
+else
+  echo "Creating GI number to seqID map (step 4 of 6)..."
+  start_time1=$(date "+%s.%N")
+  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
+    xargs -0 cat | report_gi_numbers.pl > gi2seqid.map.tmp
+  mv gi2seqid.map.tmp gi2seqid.map
 
-seqid2taxid_map_file="seqid2taxid.map"
-if [ -e "$seqid2taxid_map_file" ]
+  echo "GI number to seqID map created. [$(report_time_elapsed $start_time1)]"
+fi
+
+if [ -e "seqid2taxid.map" ]
 then
   echo "Skipping step 5, seqID to taxID map already complete."
 else
   echo "Creating seqID to taxID map (step 5 of 6)..."
   start_time1=$(date "+%s.%N")
-
-  find library/ -maxdepth 2 -name prelim_map.txt | xargs cat > taxonomy/prelim_map.txt
-  if [ ! -s "taxonomy/prelim_map.txt" ]; then
-    echo "No preliminary seqid/taxid mapping files found, aborting."
-    exit 1
-  fi
-
-  grep "^TAXID" taxonomy/prelim_map.txt | cut -f 2- > $seqid2taxid_map_file.tmp || true
-  if grep "^ACCNUM" taxonomy/prelim_map.txt | cut -f 2- > accmap_file.tmp; then
-    if compgen -G "taxonomy/*.accession2taxid" > /dev/null; then
-      lookup_accession_numbers.pl accmap_file.tmp taxonomy/*.accession2taxid > seqid2taxid_acc.tmp
-      cat seqid2taxid_acc.tmp >> $seqid2taxid_map_file.tmp
-      rm seqid2taxid_acc.tmp
-    else
-      echo "Accession to taxid map files are required to build this DB."
-      echo "Run 'kraken-build --db $KRAKEN_DB_NAME --download-taxonomy' again?"
-      exit 1
-    fi
-  fi
-  mv $seqid2taxid_map_file.tmp $seqid2taxid_map_file
-  line_ct=$(wc -l $seqid2taxid_map_file | awk '{print $1}')
+  make_seqid_to_taxid_map taxonomy/gi_taxid_nucl.dmp gi2seqid.map \
+    > seqid2taxid.map.tmp
+  mv seqid2taxid.map.tmp seqid2taxid.map
+  line_ct=$(wc -l seqid2taxid.map | awk '{print $1}')
 
   echo "$line_ct sequences mapped to taxa. [$(report_time_elapsed $start_time1)]"
 fi
