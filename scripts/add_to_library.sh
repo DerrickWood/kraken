@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -35,13 +35,15 @@ then
   exit 1
 fi
 
+if ! verify_gi_numbers.pl "$1"
+then
+  echo "Can't add \"$1\": sequence is missing GI number"
+  exit 1
+fi
+
 add_dir="$LIBRARY_DIR/added"
 mkdir -p "$add_dir"
-scan_fasta_file.pl "$1" > "$add_dir/temp_map.txt"
 
 filename=$(cp_into_tempfile.pl -t "XXXXXXXXXX" -d "$add_dir" -s fna "$1")
-
-cat "$add_dir/temp_map.txt" >> "$KRAKEN_DB_NAME/taxonomy/prelim_map.txt"
-rm "$add_dir/temp_map.txt"
 
 echo "Added \"$1\" to library ($KRAKEN_DB_NAME)"
