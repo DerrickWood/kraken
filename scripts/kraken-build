@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -40,7 +40,7 @@ my $DEF_MINIMIZER_LEN = 15;
 my $DEF_KMER_LEN = 31;
 my $DEF_THREAD_CT = 1;
 
-my @VALID_LIBRARY_TYPES = qw/bacteria plasmids viruses human/;
+my @VALID_LIBRARY_TYPES = qw/archaea bacteria plasmid viral human/;
 
 # Option/task option variables
 my (
@@ -199,8 +199,8 @@ Usage: $PROG [task option] [options]
 Task options (exactly one must be selected):
   --download-taxonomy        Download NCBI taxonomic information
   --download-library TYPE    Download partial library
-                             (TYPE = one of "bacteria", "plasmids", 
-                             "viruses", "human")
+                             (TYPE = one of "archaea", "bacteria", "plasmid", 
+                             "viral", "human")
   --add-to-library FILE      Add FILE to library
   --build                    Create DB from library
                              (requires taxonomy d/l'ed and at least one file
