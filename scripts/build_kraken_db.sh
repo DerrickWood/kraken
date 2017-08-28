@@ -72,12 +72,12 @@ else
   # Estimate hash size as 1.15 * chars in library FASTA files
   if [ -z "$KRAKEN_HASH_SIZE" ]
   then
-    KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+    KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna.gz' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-    xargs -0 cat | \
+  find library/ '(' -name '*.fna.gz' ')' -print0 | \
+    xargs -0 zcat | \
     jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
       -o database /dev/fd/0
 
@@ -154,32 +154,9 @@ else
   echo "K-mer set sorted. [$(report_time_elapsed $start_time1)]"
 fi
 
-if [ -e "gi2seqid.map" ]
-then
-  echo "Skipping step 4, GI number to seqID map already complete."
-else
-  echo "Creating GI number to seqID map (step 4 of 6)..."
-  start_time1=$(date "+%s.%N")
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-    xargs -0 cat | report_gi_numbers.pl > gi2seqid.map.tmp
-  mv gi2seqid.map.tmp gi2seqid.map
-
-  echo "GI number to seqID map created. [$(report_time_elapsed $start_time1)]"
-fi
-
-if [ -e "seqid2taxid.map" ]
-then
-  echo "Skipping step 5, seqID to taxID map already complete."
-else
-  echo "Creating seqID to taxID map (step 5 of 6)..."
-  start_time1=$(date "+%s.%N")
-  make_seqid_to_taxid_map taxonomy/gi_taxid_nucl.dmp gi2seqid.map \
-    > seqid2taxid.map.tmp
-  mv seqid2taxid.map.tmp seqid2taxid.map
-  line_ct=$(wc -l seqid2taxid.map | awk '{print $1}')
-
-  echo "$line_ct sequences mapped to taxa. [$(report_time_elapsed $start_time1)]"
-fi
+echo -n "Concatenating seqid2taxid.map files (step 4 of 6)..."
+cat library/*/seqid2taxid.map > seqid2taxid.map
+echo " complete."
 
 if [ -e "lca.complete" ]
 then
@@ -187,8 +164,8 @@ then
 else
   echo "Setting LCAs in database (step 6 of 6)..."
   start_time1=$(date "+%s.%N")
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
-    xargs -0 cat | \
+  find library/ '(' -name '*.fna.gz' ')' -print0 | \
+    xargs -0 zcat | \
     set_lcas $MEMFLAG -x -d database.kdb -i database.idx \
     -n taxonomy/nodes.dmp -t $KRAKEN_THREAD_CT -m seqid2taxid.map -F /dev/fd/0
   touch "lca.complete"
