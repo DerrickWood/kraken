@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -32,8 +32,9 @@ fi
 
 check_for_jellyfish.sh
 kraken-build --db $KRAKEN_DB_NAME --download-taxonomy
+kraken-build --db $KRAKEN_DB_NAME --download-library archaea
 kraken-build --db $KRAKEN_DB_NAME --download-library bacteria
-kraken-build --db $KRAKEN_DB_NAME --download-library viruses
+kraken-build --db $KRAKEN_DB_NAME --download-library viral
 kraken-build --db $KRAKEN_DB_NAME --build --threads $KRAKEN_THREAD_CT \
                --jellyfish-hash-size "$KRAKEN_HASH_SIZE" \
                --max-db-size "$KRAKEN_MAX_DB_SIZE" \
