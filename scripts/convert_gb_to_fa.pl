@@ -30,7 +30,7 @@ my($seqid, $in_seq, $taxid);
 
 my $input_file = $ARGV[0];
 
-open(IN, "gunzip -c -f $input_file |") or die "can’t open pipe to $input_file";
+open(IN, "gunzip -c -f \Q$input_file\E |") or die "can’t open pipe to $input_file";
 
 while (<IN>) {
   if (m/^VERSION\s+(\S+)/) {
