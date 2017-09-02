@@ -30,11 +30,7 @@ my($seqid, $in_seq, $taxid);
 
 my $input_file = $ARGV[0];
 
-if ($input_file =~ /.gz$/) {
-  open(IN, "gunzip -c $input_file |") or die "can’t open pipe to $input_file";
-} else {
-  open(IN, $input_file) or die "can’t open $input_file";
-}
+open(IN, "gunzip -c -f $input_file |") or die "can’t open pipe to $input_file";
 
 while (<IN>) {
   if (m/^VERSION\s+(\S+)/) {
