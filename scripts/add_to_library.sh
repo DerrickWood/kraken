@@ -24,24 +24,38 @@ set -e  # Stop on error
 
 LIBRARY_DIR="$KRAKEN_DB_NAME/library"
 
-if [ ! -e "$1" ]
+input_file=$1
+
+if [ ! -e "$input_file" ]
 then
-  echo "Can't add \"$1\": file does not exist"
+  echo "Can't add \"$input_file\": file does not exist"
   exit 1
 fi
-if [ ! -f "$1" ]
+if [ ! -f "$input_file" ]
 then
-  echo "Can't add \"$1\": not a regular file"
+  echo "Can't add \"$input_file\": not a regular file"
   exit 1
 fi
 
 add_dir="$LIBRARY_DIR/added"
 mkdir -p "$add_dir"
-scan_fasta_file.pl "$1" > "$add_dir/temp_map.txt"
 
-filename=$(cp_into_tempfile.pl -t "XXXXXXXXXX" -d "$add_dir" -s fna "$1")
+if [[ $input_file == *.gbff || $input_file == *.gbff.gz || $input_file == *.gbk || $input_file == *.gbk.gz ]]
+then
+    convert_gb_to_fa.pl $input_file > "$add_dir/temp.fna"
+    input_file="$add_dir/temp.fna"
+fi
+   
+scan_fasta_file.pl "$input_file" > "$add_dir/temp_map.txt"
+
+filename=$(cp_into_tempfile.pl -t "XXXXXXXXXX" -d "$add_dir" -s fna "$input_file")
 
 cat "$add_dir/temp_map.txt" >> "$add_dir/prelim_map.txt"
 rm "$add_dir/temp_map.txt"
+
+if [ -e "$add_dir/temp.fna" ]
+then
+    rm "$add_dir/temp.fna"
+fi
 
 echo "Added \"$1\" to library ($KRAKEN_DB_NAME)"
