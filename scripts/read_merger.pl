@@ -93,7 +93,12 @@ while (defined($seq1 = read_sequence($fh1))) {
   if ($check_names && $seq1->{id} ne $seq2->{id}) {
     die "$PROG: mismatched mate pair names ('$seq1->{id}' & '$seq2->{id}')\n";
   }
-  print_merged_sequence($seq1, $seq2);
+  if ($fastq_input) {
+      print_merged_sequence_fastq($seq1, $seq2);
+  }
+  else {
+      print_merged_sequence($seq1, $seq2);
+  }
 }
 if (defined($seq2 = read_sequence($fh2))) {
   die "$PROG: mismatched sequence counts\n";
@@ -107,6 +112,7 @@ close $fh2;
     my $fh = shift;
     my $id;
     my $seq = "";
+    my $qual = "";
     if (! exists $buffers{$fh}) {
       $buffers{$fh} = <$fh>;
     }
@@ -145,7 +151,7 @@ close $fh2;
       delete $buffers{$fh};
       chomp($seq = <$fh>);
       scalar <$fh>;  # quality header
-      scalar <$fh>;  # quality values
+      chomp($qual = <$fh>); # quality values
     }
     else {
       # should never get here
@@ -153,7 +159,7 @@ close $fh2;
     }
 
     $id =~ s/[\/_.][12]$//;  # strip /1 (or .1, _1) or /2 to help comparison
-    return { id => $id, seq => $seq };
+    return { id => $id, seq => $seq, qual => $qual };
   }
 }
 
@@ -161,4 +167,12 @@ sub print_merged_sequence {
   my ($seq1, $seq2) = @_;
   print ">" . $seq1->{id} . "\n";
   print $seq1->{seq} . "|" . $seq2->{seq} . "\n";
+}
+
+sub print_merged_sequence_fastq {
+  my ($seq1, $seq2) = @_;
+  print "@" . $seq1->{id} . "|" . $seq2->{id} ."\n";
+  print $seq1->{seq} . "|" . $seq2->{seq} . "\n";
+  print "+\n";
+  print $seq1->{qual} . "|" . $seq2->{qual} . "\n";
 }
