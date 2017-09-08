@@ -160,5 +160,5 @@ close $fh2;
 sub print_merged_sequence {
   my ($seq1, $seq2) = @_;
   print ">" . $seq1->{id} . "\n";
-  print $seq1->{seq} . "N" . $seq2->{seq} . "\n";
+  print $seq1->{seq} . "|" . $seq2->{seq} . "\n";
 }
