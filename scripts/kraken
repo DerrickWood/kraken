@@ -139,7 +139,7 @@ push @flags, "-t", $threads if $threads > 1;
 push @flags, "-n", $taxonomy if defined $taxonomy;
 push @flags, "-q" if $quick;
 push @flags, "-m", $min_hits if $min_hits > 1;
-push @flags, "-f" if $fastq_input && ! $paired;  # merger always outputs FASTA
+push @flags, "-f" if $fastq_input;
 push @flags, "-U", $unclassified_out if defined $unclassified_out;
 push @flags, "-C", $classified_out if defined $classified_out;
 push @flags, "-o", $outfile if defined $outfile;
