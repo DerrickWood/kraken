@@ -90,8 +90,12 @@ while (defined($seq1 = read_sequence($fh1))) {
   if (! defined $seq2) {
     die "$PROG: mismatched sequence counts\n";
   }
-  if ($check_names && $seq1->{id} ne $seq2->{id}) {
-    die "$PROG: mismatched mate pair names ('$seq1->{id}' & '$seq2->{id}')\n";
+  if ($check_names) {
+    my $comparison_id1 = $seq1->{id} =~ /(\S+)/; # Only check up until first whitespace character
+    my $comparison_id2 = $seq2->{id} =~ /(\S+)/;
+    if ($comparison_id1 ne $comparison_id2) {
+        die "$PROG: mismatched mate pair names ('$seq1->{id}' & '$seq2->{id}')\n";
+    }
   }
   if ($fastq_input) {
       print_merged_sequence_fastq($seq1, $seq2);
@@ -139,7 +143,7 @@ close $fh2;
       }
     }
     elsif ($fastq_input) {
-      if ($buffers{$fh} =~ /^@(\S+)/) {
+      if ($buffers{$fh} =~ /^@(\S+\s\S+)/) {  # Allow one whitespace character in fastq header
         $id = $1;
       }
       else {
@@ -158,7 +162,6 @@ close $fh2;
       die "$PROG: I have no idea what kind of input I'm reading!!!\n";
     }
 
-    $id =~ s/[\/_.][12]$//;  # strip /1 (or .1, _1) or /2 to help comparison
     return { id => $id, seq => $seq, qual => $qual };
   }
 }
