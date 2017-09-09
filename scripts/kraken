@@ -54,7 +54,9 @@ my $paired = 0;
 my $check_names = 0;
 my $only_classified_output = 0;
 my $unclassified_out;
+my $unclassified_out_prefix;
 my $classified_out;
+my $classified_out_prefix;
 my $outfile;
 
 GetOptions(
@@ -67,7 +69,9 @@ GetOptions(
   "quick" => \$quick,
   "min-hits=i" => \$min_hits,
   "unclassified-out=s" => \$unclassified_out,
+  "unclassified-out-prefix=s" => \$unclassified_out_prefix,
   "classified-out=s" => \$classified_out,
+  "classified-out-prefix=s" => \$classified_out_prefix,
   "output=s" => \$outfile,
   "preload" => \$preload,
   "paired" => \$paired,
@@ -141,10 +145,13 @@ push @flags, "-q" if $quick;
 push @flags, "-m", $min_hits if $min_hits > 1;
 push @flags, "-f" if $fastq_input;
 push @flags, "-U", $unclassified_out if defined $unclassified_out;
+push @flags, "-r", $unclassified_out_prefix if defined $unclassified_out_prefix;
 push @flags, "-C", $classified_out if defined $classified_out;
+push @flags, "-p", $classified_out_prefix if defined $classified_out_prefix;
 push @flags, "-o", $outfile if defined $outfile;
 push @flags, "-c", if $only_classified_output;
 push @flags, "-M" if $preload;
+push @flags, "-P", if $paired;
 
 # handle piping for decompression/merging
 my @pipe_argv;
