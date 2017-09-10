@@ -356,13 +356,54 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 	(*oss_ptr2) << ">" << header2 << endl
 		    << seq2 << endl;
       }
-      else if (Fastq_output && ! (Output_format == "paired")) {
+      else if (Fastq_output && Output_format == "legacy") {
 	(*oss_ptr) << "@" << dna.header_line << endl
 		   << dna.seq << endl
 		   << "+" << endl
 		   << dna.quals << endl;
       }
-      else {
+      else if (Fastq_output && Output_format == "interleaved") {
+	string delimiter = "|";
+	size_t pos = 0;
+	pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, pos);
+	string header2 = dna.header_line.substr(pos + delimiter.length());
+	pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, pos);
+	string seq2 = dna.seq.substr(pos + delimiter.length());
+	pos = dna.quals.find(delimiter);
+	string quals1 = dna.quals.substr(0, pos);
+	string quals2 = dna.quals.substr(pos + delimiter.length());
+	(*oss_ptr) << "@" << header1 << endl
+		   << seq1 << endl
+		   << "+" << endl
+		   << quals1 << endl;
+	(*oss_ptr) << "@" << header2 << endl
+		   << seq2 << endl
+		   << "+" << endl
+		   << quals2 << endl;
+      }
+      else if (! Fastq_output && Output_format == "interleaved") {
+	string delimiter = "|";
+	size_t pos = 0;
+	pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, pos);
+	string header2 = dna.header_line.substr(pos + delimiter.length());
+	pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, pos);
+	string seq2 = dna.seq.substr(pos + delimiter.length());
+	(*oss_ptr) << ">" << header1 << endl
+		   << seq1 << endl;
+	(*oss_ptr) << ">" << header2 << endl
+		   << seq2 << endl;
+      }
+      else if (Fastq_output && Output_format == "legacy") {
+	(*oss_ptr) << "@" << dna.header_line << endl
+		   << dna.seq << endl
+		   << "+" << endl
+		   << dna.quals << endl;
+      }
+      else if (! Fastq_output && Output_format == "legacy") {
 	(*oss_ptr) << ">" << dna.header_line << endl
 		   << dna.seq << endl;
       }
@@ -537,6 +578,14 @@ void parse_command_line(int argc, char **argv) {
   }
   if (Output_format == "paired" && (Classified_output_file == "-" || Unclassified_output_file == "-")) {
     cerr << "Can't send paired output to stdout" << endl;
+    usage();
+  }
+  if ((Output_format == "paired" || Output_format == "interleaved") && ! Paired_input) {
+    cerr << "Output format " << Output_format << " requires paired input" << endl;
+    usage();
+  }
+  if (Output_format == "legacy" && Fastq_output) {
+    cerr << "FASTQ output not supported for legacy ('N' delimited) output format. Use '--out-fmt paired'" << endl;
     usage();
   }
   if (Fastq_output && ! Fastq_input) {

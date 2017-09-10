@@ -168,6 +168,7 @@ if ($paired) {
   push @merge_flags, "--gz" if $gunzip;
   push @merge_flags, "--bz2" if $bunzip2;
   push @merge_flags, "--check-names" if $check_names;
+  push @merge_flags, "--output-format", $output_format if defined $output_format;
   @pipe_argv = ("read_merger.pl", @merge_flags, @ARGV);
 }
 elsif ($compressed) {
@@ -233,6 +234,8 @@ Options:
                           Print unclassified sequences to filename
   --classified-out FILENAME
                           Print classified sequences to filename
+  --out-fmt FORMAT        Format for [un]classified sequence output. supported 
+                          options are: {legacy, paired, interleaved}
   --output FILENAME       Print output to filename (default: stdout); "-" will
                           suppress normal output
   --only-classified-output

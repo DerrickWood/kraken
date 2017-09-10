@@ -32,13 +32,15 @@ my $fastq_input = 0;
 my $gunzip = 0;
 my $bunzip2 = 0;
 my $check_names = 0;
+my $output_format;
 
 GetOptions(
   "fa" => \$fasta_input,
   "fq" => \$fastq_input,
   "gz" => \$gunzip,
   "bz2" => \$bunzip2,
-  "check-names" => \$check_names
+  "check-names" => \$check_names,
+  "output-format=s" => \$output_format
 );
 
 if (@ARGV != 2) {
@@ -84,7 +86,13 @@ else {
 
 # read/merge/print loop
 # make sure names match before merging
-my ($seq1, $seq2);
+my ($seq1, $seq2, $delimiter);
+if ($output_format eq "legacy") {
+  $delimiter = 'N';
+}
+else {
+  $delimiter = '|';
+}
 while (defined($seq1 = read_sequence($fh1))) {
   $seq2 = read_sequence($fh2);
   if (! defined $seq2) {
@@ -98,10 +106,10 @@ while (defined($seq1 = read_sequence($fh1))) {
     }
   }
   if ($fastq_input) {
-      print_merged_sequence_fastq($seq1, $seq2);
+    print_merged_sequence_fastq($seq1, $seq2, $delimiter);
   }
   else {
-      print_merged_sequence($seq1, $seq2);
+    print_merged_sequence($seq1, $seq2, $delimiter);
   }
 }
 if (defined($seq2 = read_sequence($fh2))) {
@@ -143,7 +151,14 @@ close $fh2;
       }
     }
     elsif ($fastq_input) {
-      if ($buffers{$fh} =~ /^@(\S+\s\S+)/) {  # Allow one whitespace character in fastq header
+      my $fastq_header_regex;
+      if ($output_format eq "legacy") {
+	  $fastq_header_regex = qr/^@(\S+)/;
+      }
+      else {
+	  $fastq_header_regex = qr/^@(\S+\s\S+)/; # Allow one whitespace character in fastq header
+      }
+      if ($buffers{$fh} =~ $fastq_header_regex) {  
         $id = $1;
       }
       else {
@@ -167,15 +182,20 @@ close $fh2;
 }
 
 sub print_merged_sequence {
-  my ($seq1, $seq2) = @_;
+  my ($seq1, $seq2, $delimiter) = @_;
   print ">" . $seq1->{id} . "\n";
-  print $seq1->{seq} . "|" . $seq2->{seq} . "\n";
+  print $seq1->{seq} . $delimiter . $seq2->{seq} . "\n";
 }
 
 sub print_merged_sequence_fastq {
-  my ($seq1, $seq2) = @_;
-  print "@" . $seq1->{id} . "|" . $seq2->{id} ."\n";
-  print $seq1->{seq} . "|" . $seq2->{seq} . "\n";
+  my ($seq1, $seq2, $delimiter) = @_;
+  if ($output_format eq "legacy") {
+    print "@" . $seq1->{id} . "\n";
+  }
+  else {
+    print "@" . $seq1->{id} . $delimiter . $seq2->{id} . "\n";
+  }
+  print $seq1->{seq} . $delimiter . $seq2->{seq} . "\n";
   print "+\n";
-  print $seq1->{qual} . "|" . $seq2->{qual} . "\n";
+  print $seq1->{qual} . $delimiter . $seq2->{qual} . "\n";
 }
