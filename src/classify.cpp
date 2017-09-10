@@ -397,12 +397,6 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 	(*oss_ptr) << ">" << header2 << endl
 		   << seq2 << endl;
       }
-      else if (Fastq_output && Output_format == "legacy") {
-	(*oss_ptr) << "@" << dna.header_line << endl
-		   << dna.seq << endl
-		   << "+" << endl
-		   << dna.quals << endl;
-      }
       else if (! Fastq_output && Output_format == "legacy") {
 	(*oss_ptr) << ">" << dna.header_line << endl
 		   << dna.seq << endl;
