@@ -323,16 +323,16 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
     if (print) {
       string delimiter = "|";
       if (Fastq_output && Output_format == "paired") {
-	size_t pos = 0;
-	pos = dna.header_line.find(delimiter);
-	string header1 = dna.header_line.substr(0, pos);
-	string header2 = dna.header_line.substr(pos + delimiter.length());
-	pos = dna.seq.find(delimiter);
-	string seq1 = dna.seq.substr(0, pos);
-	string seq2 = dna.seq.substr(pos + delimiter.length());
-	pos = dna.quals.find(delimiter);
-	string quals1 = dna.quals.substr(0, pos);
-	string quals2 = dna.quals.substr(pos + delimiter.length());
+	size_t delimiter_pos = 0;
+	delimiter_pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, delimiter_pos);
+	string header2 = dna.header_line.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, delimiter_pos);
+	string seq2 = dna.seq.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.quals.find(delimiter);
+	string quals1 = dna.quals.substr(0, delimiter_pos);
+	string quals2 = dna.quals.substr(delimiter_pos + delimiter.length());
 	(*oss_ptr) << "@" << header1 << endl
 		   << seq1 << endl
 		   << "+" << endl
@@ -343,13 +343,13 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		    << quals2 << endl;
       }
       else if (! Fastq_output && Output_format == "paired") {
-	size_t pos = 0;
-	pos = dna.header_line.find(delimiter);
-	string header1 = dna.header_line.substr(0, pos);
-	string header2 = dna.header_line.substr(pos + delimiter.length());
-	pos = dna.seq.find(delimiter);
-	string seq1 = dna.seq.substr(0, pos);
-	string seq2 = dna.seq.substr(pos + delimiter.length());
+	size_t delimiter_pos = 0;
+	delimiter_pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, delimiter_pos);
+	string header2 = dna.header_line.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, delimiter_pos);
+	string seq2 = dna.seq.substr(delimiter_pos + delimiter.length());
 	(*oss_ptr) << ">" << header1 << endl
 		   << seq1 << endl;
 	(*oss_ptr2) << ">" << header2 << endl
@@ -362,16 +362,16 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		   << dna.quals << endl;
       }
       else if (Fastq_output && Output_format == "interleaved") {
-	size_t pos = 0;
-	pos = dna.header_line.find(delimiter);
-	string header1 = dna.header_line.substr(0, pos);
-	string header2 = dna.header_line.substr(pos + delimiter.length());
-	pos = dna.seq.find(delimiter);
-	string seq1 = dna.seq.substr(0, pos);
-	string seq2 = dna.seq.substr(pos + delimiter.length());
-	pos = dna.quals.find(delimiter);
-	string quals1 = dna.quals.substr(0, pos);
-	string quals2 = dna.quals.substr(pos + delimiter.length());
+	size_t delimiter_pos = 0;
+	delimiter_pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, delimiter_pos);
+	string header2 = dna.header_line.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, delimiter_pos);
+	string seq2 = dna.seq.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.quals.find(delimiter);
+	string quals1 = dna.quals.substr(0, delimiter_pos);
+	string quals2 = dna.quals.substr(delimiter_pos + delimiter.length());
 	(*oss_ptr) << "@" << header1 << endl
 		   << seq1 << endl
 		   << "+" << endl
@@ -382,13 +382,13 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		   << quals2 << endl;
       }
       else if (! Fastq_output && Output_format == "interleaved") {
-	size_t pos = 0;
-	pos = dna.header_line.find(delimiter);
-	string header1 = dna.header_line.substr(0, pos);
-	string header2 = dna.header_line.substr(pos + delimiter.length());
-	pos = dna.seq.find(delimiter);
-	string seq1 = dna.seq.substr(0, pos);
-	string seq2 = dna.seq.substr(pos + delimiter.length());
+	size_t delimiter_pos = 0;
+	delimiter_pos = dna.header_line.find(delimiter);
+	string header1 = dna.header_line.substr(0, delimiter_pos);
+	string header2 = dna.header_line.substr(delimiter_pos + delimiter.length());
+	delimiter_pos = dna.seq.find(delimiter);
+	string seq1 = dna.seq.substr(0, delimiter_pos);
+	string seq2 = dna.seq.substr(delimiter_pos + delimiter.length());
 	(*oss_ptr) << ">" << header1 << endl
 		   << seq1 << endl;
 	(*oss_ptr) << ">" << header2 << endl
