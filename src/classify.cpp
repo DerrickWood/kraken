@@ -321,8 +321,8 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
     }
     bool print = call ? Print_classified : Print_unclassified;
     if (print) {
+      string delimiter = "|";
       if (Fastq_output && Output_format == "paired") {
-	string delimiter = "|";
 	size_t pos = 0;
 	pos = dna.header_line.find(delimiter);
 	string header1 = dna.header_line.substr(0, pos);
@@ -343,7 +343,6 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		    << quals2 << endl;
       }
       else if (! Fastq_output && Output_format == "paired") {
-	string delimiter = "|";
 	size_t pos = 0;
 	pos = dna.header_line.find(delimiter);
 	string header1 = dna.header_line.substr(0, pos);
@@ -363,7 +362,6 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		   << dna.quals << endl;
       }
       else if (Fastq_output && Output_format == "interleaved") {
-	string delimiter = "|";
 	size_t pos = 0;
 	pos = dna.header_line.find(delimiter);
 	string header1 = dna.header_line.substr(0, pos);
@@ -384,7 +382,6 @@ void classify_sequence(DNASequence &dna, ostringstream &koss,
 		   << quals2 << endl;
       }
       else if (! Fastq_output && Output_format == "interleaved") {
-	string delimiter = "|";
 	size_t pos = 0;
 	pos = dna.header_line.find(delimiter);
 	string header1 = dna.header_line.substr(0, pos);
