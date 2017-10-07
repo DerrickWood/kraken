@@ -36,6 +36,10 @@ THIS_DIR=$PWD
 
 library_name="$1"
 library_file="library.fna"
+if [ -e "$LIBRARY_DIR/$library_name/.completed" ]; then
+  echo "Skipping $library_name, already completed library download"
+  exit 0
+fi
 case "$1" in
   "archaea" | "bacteria" | "viral" | "human" )
     mkdir -p $LIBRARY_DIR/$library_name
@@ -55,7 +59,8 @@ case "$1" in
     fi
     rm -rf all/ library.f* manifest.txt rsync.err
     rsync_from_ncbi.pl assembly_summary.txt
-    scan_fasta_file.pl $library_file >> prelim_map.txt
+    scan_fasta_file.pl $library_file > prelim_map.txt
+    touch .completed
     ;;
   "plasmid")
     mkdir -p $LIBRARY_DIR/plasmid
@@ -68,6 +73,7 @@ case "$1" in
     cat manifest.txt | xargs -n1 -I{} gunzip -c {} > $library_file
     rm -f plasmid.* .listing
     scan_fasta_file.pl $library_file > prelim_map.txt
+    touch .completed
     echo " done."
     ;;
   *)
