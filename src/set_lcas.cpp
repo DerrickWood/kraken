@@ -120,10 +120,15 @@ void process_single_file() {
       for (size_t i = 0; i < dna.seq.size(); i += SKIP_LEN)
         set_lcas(taxid, dna.seq, i, i + SKIP_LEN + Database.get_k() - 1);
     }
-    cerr << "\rProcessed " << ++seqs_processed << " sequences";
+    if (isatty(fileno(stderr)))
+      cerr << "\rProcessed " << ++seqs_processed << " sequences";
+    else if (++seqs_processed % 500 == 0)
+      cerr << "Processed " << seqs_processed << " sequences.\n";
   }
-  cerr << "\r                                                       ";
-  cerr << "\rFinished processing " << seqs_processed << " sequences" << endl;
+  if (isatty(fileno(stderr))) {
+    cerr << "\r                                                       \r";
+  }
+  cerr << "Finished processing " << seqs_processed << " sequences" << endl;
 }
 
 void process_files() {
@@ -144,10 +149,15 @@ void process_files() {
     iss >> filename;
     iss >> taxid;
     process_file(filename, taxid);
-    cerr << "\rProcessed " << ++seqs_processed << " sequences";
+    if (isatty(fileno(stderr)))
+      cerr << "\rProcessed " << ++seqs_processed << " sequences";
+    else if (++seqs_processed % 500 == 0)
+      cerr << "Processed " << seqs_processed << " sequences.\n";
   }
-  cerr << "\r                                                       ";
-  cerr << "\rFinished processing " << seqs_processed << " sequences" << endl;
+  if (isatty(fileno(stderr))) {
+    cerr << "\r                                                       \r";
+  }
+  cerr << "Finished processing " << seqs_processed << " sequences" << endl;
 }
 
 void process_file(string filename, uint32_t taxid) {
