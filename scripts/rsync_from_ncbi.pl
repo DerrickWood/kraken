@@ -41,12 +41,37 @@ open MANIFEST, ">", "manifest.txt"
   or die "$PROG: can't write manifest: $!\n";
 print MANIFEST "$_\n" for keys %manifest;
 close MANIFEST;
+ 
+print STDERR "Step 1/3: performing rsync dry run...\n";
+# Sometimes some files aren't always present, so we have to do this two-rsync run hack
+# First, do a dry run to find non-existent files, then delete them from the
+# manifest; after this, execution can proceed as usual.
+system("rsync --dry-run --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ . 2> rsync.err");
+open ERR_FILE, "<", "rsync.err"
+  or die "$PROG: can't read rsync.err file: $!\n";
+while (<ERR_FILE>) {
+  chomp;
+  # I really doubt this will work across every version of rsync. :(
+  if (/failed: No such file or directory/ && /^rsync: link_stat "\/([^"]+)"/) { 
+    warn "$PROG: \"$1\" (taxid: $manifest{$1}) was not found on rsync server, will remove from manifest\n";
+    delete $manifest{$1};
+  }
+}
+close ERR_FILE;
+print STDERR "Rsync dry run complete, removing any non-existent files from manifest.\n";
 
-print STDERR "Step 1/2: Performing rsync file transfer of requested files\n";
-system("rsync --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ .") == 0
-  or die "$PROG: rsync error, exiting: $?\n";
+# Rewrite manifest
+open MANIFEST, ">", "manifest.txt"
+  or die "$PROG: can't re-write manifest: $!\n";
+print MANIFEST "$_\n" for keys %manifest;
+close MANIFEST;
+
+print STDERR "Step 2/3: Performing rsync file transfer of requested files\n";
+if (system("rsync --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ .") != 0) {
+  die "$PROG: rsync error, exited with code @{[$? >> 8]}\n";
+}
 print STDERR "Rsync file transfer complete.\n";
-print STDERR "Step 2/2: Assigning taxonomic IDs to sequences\n";
+print STDERR "Step 3/3: Assigning taxonomic IDs to sequences\n";
 my $output_file = "library.fna";
 open OUT, ">", $output_file
   or die "$PROG: can't write $output_file: $!\n";
@@ -74,7 +99,10 @@ for my $in_filename (keys %manifest) {
   my $out_line = progress_line($projects_added, scalar keys %manifest, $sequences_added, $ch_added) . "...";
   $max_out_chars = max(length($out_line), $max_out_chars);
   my $space_line = " " x $max_out_chars;
-  print STDERR "\r$space_line\r$out_line";
+  print STDERR "\r$space_line\r$out_line" if -t STDERR;
+  if (! -t STDERR && $projects_added == keys %manifest) {
+    print STDERR "$out_line";
+  }
 }
 close OUT;
 print STDERR " done.\n";
