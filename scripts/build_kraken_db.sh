@@ -69,14 +69,14 @@ else
   start_time1=$(date "+%s.%N")
 
   check_for_jellyfish.sh
-  # Estimate hash size as 1.15 * chars in library FASTA files
+  # Estimate hash size as 1.25 * estimated k-mer count
   if [ -z "$KRAKEN_HASH_SIZE" ]
   then
-    KRAKEN_HASH_SIZE=$(find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -printf '%s\n' | perl -nle '$sum += $_; END {print int(1.15 * $sum)}')
+    KRAKEN_HASH_SIZE=$(find library/ -name '*.fna' -print0 | xargs -0 cat | kmer_estimator -m 1.25 -t $KRAKEN_THREAD_CT -k $KRAKEN_KMER_LEN)
     echo "Hash size not specified, using '$KRAKEN_HASH_SIZE'"
   fi
 
-  find library/ '(' -name '*.fna' -o -name '*.fa' -o -name '*.ffn' ')' -print0 | \
+  find library/ -name '*.fna' -print0 | \
     xargs -0 cat | \
     jellyfish count -m $KRAKEN_KMER_LEN -s $KRAKEN_HASH_SIZE -C -t $KRAKEN_THREAD_CT \
       -o database /dev/fd/0
