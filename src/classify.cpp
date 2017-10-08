@@ -133,7 +133,8 @@ void report_stats(struct timeval time1, struct timeval time2) {
   seconds /= 1e6;
   seconds += time2.tv_sec;
 
-  cerr << "\r";
+  if (isatty(fileno(stderr)))
+    cerr << "\r";
   fprintf(stderr, 
           "%llu sequences (%.2f Mbp) processed in %.3fs (%.1f Kseq/m, %.2f Mbp/m).\n",
           (unsigned long long) total_sequences, total_bases / 1.0e6, seconds,
@@ -194,7 +195,8 @@ void process_file(char *filename) {
           (*Unclassified_output) << unclassified_output_ss.str();
         total_sequences += work_unit.size();
         total_bases += total_nt;
-        cerr << "\rProcessed " << total_sequences << " sequences (" << total_bases << " bp) ...";
+        if (isatty(fileno(stderr)))
+          cerr << "\rProcessed " << total_sequences << " sequences (" << total_bases << " bp) ...";
       }
     }
   }  // end parallel section
