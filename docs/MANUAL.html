@@ -43,9 +43,9 @@
 <h1 id="system-requirements">System Requirements</h1>
 <p>Note: Users concerned about the disk or memory requirements should read the paragraph about MiniKraken, below.</p>
 <ul>
-<li><p><strong>Disk space</strong>: Construction of Kraken's standard database will require at least 160 GB of disk space. Customized databases may require more or less space. Disk space used is linearly proportional to the number of distinct <span class="math inline"><em>k</em></span>-mers; as of Feb. 2015, Kraken's default database contains just under 6 billion (6e9) distinct <span class="math inline"><em>k</em></span>-mers.</p>
+<li><p><strong>Disk space</strong>: Construction of Kraken's standard database will require at least 500 GB of disk space as of Oct. 2017. Customized databases may require more or less space. After construction, the minimum required database files require 250 GB of disk space. Disk space used is linearly proportional to the number of distinct <span class="math inline"><em>k</em></span>-mers; as of Oct. 2017, Kraken's default database contains approximately 34.3 billion (3.4e10) distinct <span class="math inline"><em>k</em></span>-mers.</p>
 <p>In addition, the disk used to store the database should be locally-attached storage. Storing the database on a network filesystem (NFS) partition can cause Kraken's operation to be very slow, or to be stopped completely. As NFS accesses are much slower than local disk accesses, both preloading and database building will be slowed by use of NFS.</p></li>
-<li><p><strong>Memory</strong>: To run efficiently, Kraken requires enough free memory to hold the database in RAM. While this can be accomplished using a ramdisk, Kraken supplies a utility for loading the database into RAM via the OS cache. The default database size is 75 GB (as of Feb. 2015), and so you will need at least that much RAM if you want to build or run with the default database.</p></li>
+<li><p><strong>Memory</strong>: To run efficiently, Kraken requires enough free memory to hold the database in RAM. While this can be accomplished using a ramdisk, Kraken supplies a utility for loading the database into RAM via the OS cache. The default database size is 140 GB (as of Oct. 2017), and so you will need at least that much RAM if you want to build or run with the default database.</p></li>
 <li><p><strong>Dependencies</strong>: Kraken currently makes extensive use of Linux utilities such as sed, find, and wget. Many scripts are written using the Bash shell, and the main scripts are written using Perl. Core programs needed to build the database and run the classifier are written in C++, and need to be compiled using g++. Multithreading is handled using OpenMP. Downloads of NCBI data are performed by wget and in some cases, by rsync. Most Linux systems that have any sort of development package installed will have all of the above listed programs and libraries available.</p>
 <p>Finally, if you want to build your own database, you will need to install the <a href="http://www.cbcb.umd.edu/software/jellyfish/">Jellyfish</a> <span class="math inline"><em>k</em></span>-mer counter. Note that Kraken only supports use of Jellyfish version 1. Jellyfish version 2 is not yet compatible with Kraken.</p></li>
 <li><p><strong>Network connectivity</strong>: Kraken's standard database build and download commands expect unfettered FTP and rsync access to the NCBI FTP server. If you're working behind a proxy, you may need to set certain environment variables (such as <code>ftp_proxy</code> or <code>RSYNC_PROXY</code>) in order to get these commands to work properly.</p></li>
@@ -74,20 +74,22 @@ cp $KRAKEN_DIR/bin/kraken-build $HOME/bin</code></pre>
 <p>Other files may be present as part of the database build process.</p>
 <p>In interacting with Kraken, you should not have to directly reference any of these files, but rather simply provide the name of the directory in which they are stored. Kraken allows both the use of a standard database as well as custom databases; these are described in the sections <a href="#standard-kraken-database">Standard Kraken Database</a> and <a href="#custom-databases">Custom Databases</a> below, respectively.</p>
 <h1 id="standard-kraken-database">Standard Kraken Database</h1>
+<p>NOTE: Building the standard Kraken database downloads and uses all complete bacterial, archeal, and viral genomes in Refseq at the time of the build. As of October 2017, this includes ~25,000 genomes, requiring 33GB of disk space. The build process will then require approximately 420GB of additional disk space. After building this standard database, usage of the datbaase will require uses to keep only the database.idx, database.kdb, and taxonomy/ files, which requires approximately 240GB of disk space. When running a sample against this database, users will need 115GB of RAM. IF you do not have these computational resources or need to test against the Refseq database of ~20,000 genomes, we recommend building a custom database with only the genomes needed for your application. </p>
 <p>To create the standard Kraken database, you can use the following command:</p>
 <pre><code>kraken-build --standard --db $DBNAME</code></pre>
-<p>(Replace &quot;<code>$DBNAME</code>&quot; above with your preferred database name/location. Please note that the database will use approximately 160 GB of disk space during creation.)</p>
+<p>(Replace &quot;<code>$DBNAME</code>&quot; above with your preferred database name/location.)</p>
 <p>This will download NCBI taxonomic information, as well as the complete genomes in RefSeq for the bacterial, archaeal, and viral domains. After downloading all this data, the build process begins; this is the most time-consuming step. If you have multiple processing cores, you can run this process with multiple threads, e.g.:</p>
 <pre><code>kraken-build --standard --threads 16 --db $DBNAME</code></pre>
-<p>Using 16 threads on a computer with 122 GB of RAM, the build process took approximately an hour and a half (steps with an asterisk have some multi-threading enabled) in February 2015:</p>
-<pre><code> 7m48s  *Step 1 (create set)
-   n/a   Step 2 (reduce database, optional and skipped)
-53m16s  *Step 3 (sort set)
- 1m04s   Step 4 (GI number to sequence ID map - now obsolete)
- 0m27s   Step 5 (Sequence ID to taxon map)
-29m20s  *Step 6 (set LCA values)
-------
-91m55s   Total build time</code></pre>
+<p>Using 16 threads on a computer with 256 GB of RAM and a jellyfish hash-size of 12800M, the build process took approximately 15 hours (steps with an asterisk have some multi-threading enabled) in October 2017. Please note that the time required for building the database depends on the number of genomic sequences:</p>
+<pre><code>
+1h36m30s  *Step 1 (create set)
+    n/a   Step 2 (reduce database, optional and skipped)
+9h30m13s  *Step 3 (sort set)
+   9m04s  Step 4 (GI number to sequence ID map - now obsolete)
+   1m20s  Step 5 (Sequence ID to taxon map)
+6h24m20s  *Step 6 (set LCA values)
+-------
+17h41m37s Total build time</code></pre>
 <p>Note that if any step (including the initial downloads) fails, the build process will abort. However, <code>kraken-build</code> will produce checkpoints throughout the installation process, and will restart the build at the last incomplete step if you attempt to run the same command again on a partially-built database.</p>
 <p>To create a custom database, or to use a database from another source, see <a href="#custom-databases">Custom Databases</a>.</p>
 <p>Notes for users with lower amounts of RAM:</p>
