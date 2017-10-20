@@ -39,7 +39,8 @@ read the paragraph about MiniKraken, below.
     least 500 GB of disk space. Customized databases may require
     more or less space.  Disk space used is linearly proportional
     to the number of distinct $k$-mers; as of Oct. 2017, Kraken's
-    default database contains just under 34.3 billion (3.4e10) distinct $k$-mers.
+    default database contains just over 14.4 billion (1.44e10)
+    distinct $k$-mers.
 
     In addition, the disk used to store the database should be
     locally-attached storage. Storing the database on a network
@@ -51,7 +52,7 @@ read the paragraph about MiniKraken, below.
 * **Memory**: To run efficiently, Kraken requires enough free memory to
     hold the database in RAM. While this can be accomplished using a
     ramdisk, Kraken supplies a utility for loading the database into
-    RAM via the OS cache. The default database size is 140 GB (as of
+    RAM via the OS cache. The default database size is 170 GB (as of
     Oct. 2017), and so you will need at least that much RAM if you want
     to build or run with the default database.
 
@@ -162,21 +163,24 @@ process begins; this is the most time-consuming step.  If you
 have multiple processing cores, you can run this process with
 multiple threads, e.g.:
 
-    kraken-build --standard --threads 16 --db $DBNAME
+    kraken-build --standard --threads 24 --db $DBNAME
 
-Using 16 threads on a computer with 250 GB of RAM and a jellyfish 
-hash-size of 12800M, the build process took approximately 15 hours
+Using 24 threads on a computer (an AWS r4.8xlarge instance)
+with 244 GB of RAM, the build process took approximately 5 hours
 (steps with an asterisk have some multi-threading enabled) in 
 October 2017:
  
-  1h36m30s  *Step 1 (create set)
-       n/a   Step 2 (reduce database, optional and skipped)
-  9h30m13s  *Step 3 (sort set)
-     9m25s   Step 4 (GI number to sequence ID map - now obsolete)
-     1m20s   Step 5 (Sequence ID to taxon map)
-  6h24m20s  *Step 6 (set LCA values)
-  --------
-  17h41m37s  Total build time
+     24m50s  *Step 1 (create set)
+        n/a   Step 2 (reduce database, optional and skipped)
+    154m53s  *Step 3 (sort set)
+        n/a   Step 4 (GI number to sequence ID map - now obsolete)
+        <1s   Step 5 (Sequence ID to taxon map)
+    127m28s  *Step 6 (set LCA values)
+    -------
+    5h7m11s   Total build time
+
+This process used the automatically estimated jellyfish hash size
+of 20170976000.
 
 Note that if any step (including the initial downloads) fails,
 the build process will abort.  However, `kraken-build` will
