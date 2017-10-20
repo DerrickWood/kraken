@@ -730,7 +730,7 @@ minimizers with a predefined constant to toggle half of each minimizer's
 bits before sorting.  The more evenly distributed bins provide better
 caching performance, but databases created in this way are not compatible
 with earlier versions of Kraken.  Kraken versions from v0.10.0-beta up to
-(but not including) v1.0 will support the use of the older databases, but
+(and including) v1.0 will support the use of the older databases, but
 we nonetheless recommend one of the two following options:
 
 1) Build a new database.  This is the preferred option, as a newly-created
