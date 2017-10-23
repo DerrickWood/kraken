@@ -1,3 +1,8 @@
+v1.0:
+* removed dependence on GI numbers
+* using taxonomy nucl_*.accession2taxid maps to create seqid2taxid maps
+* changed kraken-build --download method to use rsync
+
 v0.10.6-beta:
 * fixed overflow bug in command line parsing
 * fixed GRCh38.p2 bug in human genome downloads
