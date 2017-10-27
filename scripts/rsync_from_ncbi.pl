@@ -82,7 +82,7 @@ my $ch = "bp";
 my $max_out_chars = 0;
 for my $in_filename (keys %manifest) {
   my $taxid = $manifest{$in_filename};
-  open IN, "zcat $in_filename |" or die "$PROG: can't read $in_filename: $!\n";
+  open IN, "gunzip -c $in_filename |" or die "$PROG: can't read $in_filename: $!\n";
   while (<IN>) {
     if (/^>/) {
       s/^>/>kraken:taxid|$taxid|/;
