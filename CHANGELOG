@@ -1,3 +1,8 @@
+v1.1:
+* added --out-fmt paired and --out-fmt interleaved to allow paired reads
+  to be separated when using --[un]classified-out options
+* updated MANUAL.html to reflect additional options. 
+
 v1.0:
 * removed dependence on GI numbers
 * using taxonomy nucl_*.accession2taxid maps to create seqid2taxid maps
