@@ -45,6 +45,7 @@ my $quick = 0;
 my $min_hits = 1;
 my $fasta_input = 0;
 my $fastq_input = 0;
+my $fastq_output = 0;
 my $db_prefix;
 my $threads;
 my $preload = 0;
@@ -55,6 +56,7 @@ my $check_names = 0;
 my $only_classified_output = 0;
 my $unclassified_out;
 my $classified_out;
+my $output_format = "legacy";
 my $outfile;
 
 GetOptions(
@@ -64,10 +66,12 @@ GetOptions(
   "threads=i" => \$threads,
   "fasta-input" => \$fasta_input,
   "fastq-input" => \$fastq_input,
+  "fastq-output" => \$fastq_output,
   "quick" => \$quick,
   "min-hits=i" => \$min_hits,
   "unclassified-out=s" => \$unclassified_out,
   "classified-out=s" => \$classified_out,
+  "out-fmt=s" => \$output_format,
   "output=s" => \$outfile,
   "preload" => \$preload,
   "paired" => \$paired,
@@ -137,14 +141,17 @@ push @flags, "-d", $kdb_file;
 push @flags, "-i", $idx_file;
 push @flags, "-t", $threads if $threads > 1;
 push @flags, "-n", $taxonomy if defined $taxonomy;
-push @flags, "-q" if $quick;
+push @flags, "-q", if $quick;
 push @flags, "-m", $min_hits if $min_hits > 1;
-push @flags, "-f" if $fastq_input && ! $paired;  # merger always outputs FASTA
+push @flags, "-f", if $fastq_input;
+push @flags, "-F", if $fastq_output;
 push @flags, "-U", $unclassified_out if defined $unclassified_out;
 push @flags, "-C", $classified_out if defined $classified_out;
+push @flags, "-O", $output_format if defined $output_format;
 push @flags, "-o", $outfile if defined $outfile;
 push @flags, "-c", if $only_classified_output;
-push @flags, "-M" if $preload;
+push @flags, "-M", if $preload;
+push @flags, "-P", if $paired;
 
 # handle piping for decompression/merging
 my @pipe_argv;
@@ -155,6 +162,7 @@ if ($paired) {
   push @merge_flags, "--gz" if $gunzip;
   push @merge_flags, "--bz2" if $bunzip2;
   push @merge_flags, "--check-names" if $check_names;
+  push @merge_flags, "--output-format", $output_format if defined $output_format;
   @pipe_argv = ("read_merger.pl", @merge_flags, @ARGV);
 }
 elsif ($compressed) {
@@ -210,6 +218,7 @@ Options:
   --threads NUM           Number of threads (default: $def_thread_ct)
   --fasta-input           Input is FASTA format
   --fastq-input           Input is FASTQ format
+  --fastq-output          Output in FASTQ format
   --gzip-compressed       Input is gzip compressed
   --bzip2-compressed      Input is bzip2 compressed
   --quick                 Quick operation (use first hit or hits)
@@ -219,6 +228,8 @@ Options:
                           Print unclassified sequences to filename
   --classified-out FILENAME
                           Print classified sequences to filename
+  --out-fmt FORMAT        Format for [un]classified sequence output. supported 
+                          options are: {legacy, paired, interleaved}
   --output FILENAME       Print output to filename (default: stdout); "-" will
                           suppress normal output
   --only-classified-output

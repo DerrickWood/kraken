@@ -32,13 +32,15 @@ my $fastq_input = 0;
 my $gunzip = 0;
 my $bunzip2 = 0;
 my $check_names = 0;
+my $output_format;
 
 GetOptions(
   "fa" => \$fasta_input,
   "fq" => \$fastq_input,
   "gz" => \$gunzip,
   "bz2" => \$bunzip2,
-  "check-names" => \$check_names
+  "check-names" => \$check_names,
+  "output-format=s" => \$output_format
 );
 
 if (@ARGV != 2) {
@@ -84,16 +86,31 @@ else {
 
 # read/merge/print loop
 # make sure names match before merging
-my ($seq1, $seq2);
+my ($seq1, $seq2, $delimiter);
+if ($output_format eq "legacy") {
+  $delimiter = 'N';
+}
+else {
+  $delimiter = '|';
+}
 while (defined($seq1 = read_sequence($fh1))) {
   $seq2 = read_sequence($fh2);
   if (! defined $seq2) {
     die "$PROG: mismatched sequence counts\n";
   }
-  if ($check_names && $seq1->{id} ne $seq2->{id}) {
-    die "$PROG: mismatched mate pair names ('$seq1->{id}' & '$seq2->{id}')\n";
+  if ($check_names) {
+    my $comparison_id1 = $seq1->{id} =~ /(\S+)/; # Only check up until first whitespace character
+    my $comparison_id2 = $seq2->{id} =~ /(\S+)/;
+    if ($comparison_id1 ne $comparison_id2) {
+        die "$PROG: mismatched mate pair names ('$seq1->{id}' & '$seq2->{id}')\n";
+    }
   }
-  print_merged_sequence($seq1, $seq2);
+  if ($fastq_input) {
+    print_merged_sequence_fastq($seq1, $seq2, $delimiter);
+  }
+  else {
+    print_merged_sequence($seq1, $seq2, $delimiter);
+  }
 }
 if (defined($seq2 = read_sequence($fh2))) {
   die "$PROG: mismatched sequence counts\n";
@@ -107,6 +124,7 @@ close $fh2;
     my $fh = shift;
     my $id;
     my $seq = "";
+    my $qual = "";
     if (! exists $buffers{$fh}) {
       $buffers{$fh} = <$fh>;
     }
@@ -133,7 +151,14 @@ close $fh2;
       }
     }
     elsif ($fastq_input) {
-      if ($buffers{$fh} =~ /^@(\S+)/) {
+      my $fastq_header_regex;
+      if ($output_format eq "legacy") {
+	  $fastq_header_regex = qr/^@(\S+)/;
+      }
+      else {
+	  $fastq_header_regex = qr/^@(\S+\s\S+)/; # Allow one whitespace character in fastq header
+      }
+      if ($buffers{$fh} =~ $fastq_header_regex) {  
         $id = $1;
       }
       else {
@@ -145,20 +170,32 @@ close $fh2;
       delete $buffers{$fh};
       chomp($seq = <$fh>);
       scalar <$fh>;  # quality header
-      scalar <$fh>;  # quality values
+      chomp($qual = <$fh>); # quality values
     }
     else {
       # should never get here
       die "$PROG: I have no idea what kind of input I'm reading!!!\n";
     }
 
-    $id =~ s/[\/_.][12]$//;  # strip /1 (or .1, _1) or /2 to help comparison
-    return { id => $id, seq => $seq };
+    return { id => $id, seq => $seq, qual => $qual };
   }
 }
 
 sub print_merged_sequence {
-  my ($seq1, $seq2) = @_;
+  my ($seq1, $seq2, $delimiter) = @_;
   print ">" . $seq1->{id} . "\n";
-  print $seq1->{seq} . "N" . $seq2->{seq} . "\n";
+  print $seq1->{seq} . $delimiter . $seq2->{seq} . "\n";
+}
+
+sub print_merged_sequence_fastq {
+  my ($seq1, $seq2, $delimiter) = @_;
+  if ($output_format eq "legacy") {
+    print "@" . $seq1->{id} . "\n";
+  }
+  else {
+    print "@" . $seq1->{id} . $delimiter . $seq2->{id} . "\n";
+  }
+  print $seq1->{seq} . $delimiter . $seq2->{seq} . "\n";
+  print "+\n";
+  print $seq1->{qual} . $delimiter . $seq2->{qual} . "\n";
 }
