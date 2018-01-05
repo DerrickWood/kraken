@@ -49,9 +49,9 @@ if (@ARGV != 2) {
 for my $file (@ARGV) {
   if (! -e $file) {
     die "$PROG: $file does not exist\n";
-  } 
-  if (! -f $file) {
-    die "$PROG: $file is not a regular file\n";
+  }
+  if (! -f $file && ! -p $file) {
+     die "$PROG: $file is not a plain file or named pipe\n";
   }
 }
 
@@ -158,7 +158,7 @@ close $fh2;
       else {
 	  $fastq_header_regex = qr/^@(\S+\s\S+)/; # Allow one whitespace character in fastq header
       }
-      if ($buffers{$fh} =~ $fastq_header_regex) {  
+      if ($buffers{$fh} =~ $fastq_header_regex) {
         $id = $1;
       }
       else {
