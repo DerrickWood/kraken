@@ -121,13 +121,13 @@ int main(int argc, char **argv) {
     if (Unclassified_output_file == "-")
       Unclassified_output = &cout;
     else {
-      if (Output_format == "paired" && Fastq_output && ! Classified_output_file.empty()) {
+      if (Output_format == "paired" && Fastq_output && ! Unclassified_output_file.empty()) {
 	string Unclassified_output_filename1 = Unclassified_output_file + "_R1.fastq";
 	string Unclassified_output_filename2 = Unclassified_output_file + "_R2.fastq";
 	Unclassified_output  = new ofstream(Unclassified_output_filename1.c_str());
 	Unclassified_output2 = new ofstream(Unclassified_output_filename2.c_str());
       } 
-      else if (Output_format == "paired" && ! Fastq_output && ! Classified_output_file.empty()) {
+      else if (Output_format == "paired" && ! Fastq_output && ! Unclassified_output_file.empty()) {
 	string Unclassified_output_filename1 = Unclassified_output_file + "_R1.fa";
 	string Unclassified_output_filename2 = Unclassified_output_file + "_R2.fa";
 	Unclassified_output  = new ofstream(Unclassified_output_filename1.c_str());
