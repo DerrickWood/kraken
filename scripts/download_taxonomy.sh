@@ -19,9 +19,9 @@ cd "$TAXONOMY_DIR"
 
 if [ ! -e "accmap.dlflag" ]
 then
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_est.accession2taxid.gz
+  #wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_est.accession2taxid.gz
   wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
-  wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_gss.accession2taxid.gz
+  #wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_gss.accession2taxid.gz
   wget $FTP_SERVER/pub/taxonomy/accession2taxid/nucl_wgs.accession2taxid.gz
   touch accmap.dlflag
   echo "Downloaded accession to taxon map(s)"
