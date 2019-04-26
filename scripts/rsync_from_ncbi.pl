@@ -15,11 +15,13 @@ use Getopt::Std;
 use List::Util qw/max/;
 
 my $PROG = basename $0;
-
+my $SERVER = "ftp.ncbi.nlm.nih.gov";
+my $use_wget = $ENV{"KRAKEN_USE_WGET"};
 my $suffix = "_genomic.fna.gz";
 
 # Manifest hash maps filenames (keys) to taxids (values)
 my %manifest;
+my %base_manifest;
 while (<>) {
   next if /^#/;
   chomp;
@@ -29,60 +31,85 @@ while (<>) {
   next unless grep {$asm_level eq $_} ("Complete Genome", "Chromosome");
 
   my $full_path = $ftp_path . "/" . basename($ftp_path) . $suffix;
+  my $base_path = basename($ftp_path) . $suffix;
   # strip off server/leading dir name to allow --files-from= to work w/ rsync
   # also allows filenames to just start with "all/", which is nice
   if (! ($full_path =~ s#^ftp://ftp\.ncbi\.nlm\.nih\.gov/genomes/##)) {
     die "$PROG: unexpected FTP path (new server?) for $ftp_path\n";
   }
   $manifest{$full_path} = $taxid;
+  $base_manifest{$base_path} = $taxid;
 }
 
 open MANIFEST, ">", "manifest.txt"
   or die "$PROG: can't write manifest: $!\n";
 print MANIFEST "$_\n" for keys %manifest;
 close MANIFEST;
- 
-print STDERR "Step 1/3: performing rsync dry run...\n";
-# Sometimes some files aren't always present, so we have to do this two-rsync run hack
-# First, do a dry run to find non-existent files, then delete them from the
-# manifest; after this, execution can proceed as usual.
-system("rsync --dry-run --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ . 2> rsync.err");
-open ERR_FILE, "<", "rsync.err"
-  or die "$PROG: can't read rsync.err file: $!\n";
-while (<ERR_FILE>) {
-  chomp;
-  # I really doubt this will work across every version of rsync. :(
-  if (/failed: No such file or directory/ && /^rsync: link_stat "\/([^"]+)"/) { 
-    warn "$PROG: \"$1\" (taxid: $manifest{$1}) was not found on rsync server, will remove from manifest\n";
-    delete $manifest{$1};
-  }
-}
-close ERR_FILE;
-print STDERR "Rsync dry run complete, removing any non-existent files from manifest.\n";
+if ($use_wget) {
+    print STDERR "Step 1/2: Downloading files\n";
+    open my $manifest2, '>', "wget_manifest.txt"
+        or die "$PROG: can't write manifest for wget: $!\n";
+    open my $in_manifest, "<", "manifest.txt"
+        or die "$PROG: can't read manifest: $!\n";
+    while(<$in_manifest>){
+        s/^/ftp:\/\/ftp.ncbi.nlm.nih.gov\/genomes\//;
+        print $manifest2 $_;
+    }
+    close $in_manifest;
+    close $manifest2;
+    my $wget_cmd = "wget -q -i wget_manifest.txt";
+    system($wget_cmd);
+    
+    print STDERR "Step 2/2: Assigning taxonomic IDs to sequences\n";
+} else {
+    print STDERR "Step 1/3: performing rsync dry run...\n";
+    # Sometimes some files aren't always present, so we have to do this two-rsync run hack
+    # First, do a dry run to find non-existent files, then delete them from the
+    # manifest; after this, execution can proceed as usual.
+    system("rsync --dry-run --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ . 2> rsync.err");
+    open ERR_FILE, "<", "rsync.err"
+    or die "$PROG: can't read rsync.err file: $!\n";
+    while (<ERR_FILE>) {
+        chomp;
+        # I really doubt this will work across every version of rsync. :(
+        if (/failed: No such file or directory/ && /^rsync: link_stat "\/([^"]+)"/) { 
+            warn "$PROG: \"$1\" (taxid: $manifest{$1}) was not found on rsync server, will remove from manifest\n";
+            delete $manifest{$1};
+        }
+    }
 
-# Rewrite manifest
-open MANIFEST, ">", "manifest.txt"
-  or die "$PROG: can't re-write manifest: $!\n";
-print MANIFEST "$_\n" for keys %manifest;
-close MANIFEST;
+    close ERR_FILE;
+    print STDERR "Rsync dry run complete, removing any non-existent files from manifest.\n";
 
-print STDERR "Step 2/3: Performing rsync file transfer of requested files\n";
-if (system("rsync --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ .") != 0) {
-  die "$PROG: rsync error, exited with code @{[$? >> 8]}\n";
+    # Rewrite manifest
+    open MANIFEST, ">", "manifest.txt"
+        or die "$PROG: can't re-write manifest: $!\n";
+    print MANIFEST "$_\n" for keys %manifest;
+    close MANIFEST;
+
+    print STDERR "Step 2/3: Performing rsync file transfer of requested files\n";
+    if (system("rsync --no-motd --files-from=manifest.txt rsync://ftp.ncbi.nlm.nih.gov/genomes/ .") != 0) {
+        die "$PROG: rsync error, exited with code @{[$? >> 8]}\n";
+    }
+    print STDERR "Rsync file transfer complete.\n";
+    print STDERR "Step 3/3: Assigning taxonomic IDs to sequences\n";
 }
-print STDERR "Rsync file transfer complete.\n";
-print STDERR "Step 3/3: Assigning taxonomic IDs to sequences\n";
 my $output_file = "library.fna";
 open OUT, ">", $output_file
-  or die "$PROG: can't write $output_file: $!\n";
+   or die "$PROG: can't write $output_file: $!\n";
+
+
 my $projects_added = 0;
 my $sequences_added = 0;
 my $ch_added = 0;
 my $ch = "bp";
 my $max_out_chars = 0;
+if ($use_wget) {
+    %manifest = %base_manifest;
+}
 for my $in_filename (keys %manifest) {
   my $taxid = $manifest{$in_filename};
-  open IN, "gunzip -c $in_filename |" or die "$PROG: can't read $in_filename: $!\n";
+  open IN, "zcat $in_filename |" or die "$PROG: can't read $in_filename: $!\n";
   while (<IN>) {
     if (/^>/) {
       s/^>/>kraken:taxid|$taxid|/;

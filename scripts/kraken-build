@@ -52,6 +52,7 @@ my (
   $hash_size,
   $max_db_size,
   $work_on_disk,
+  $use_wget,
   $shrink_block_offset,
 
   $dl_taxonomy,
@@ -96,6 +97,7 @@ GetOptions(
   "new-db=s", \$new_db,
   "jellyfish-hash-size=s", \$hash_size,
   "max-db-size=s", \$max_db_size,
+  "use-wget" => \$use_wget,
   "work-on-disk", \$work_on_disk,
   "shrink-block-offset=i", \$shrink_block_offset,
 
@@ -159,7 +161,7 @@ $ENV{"KRAKEN_KMER_LEN"} = $kmer_len;
 $ENV{"KRAKEN_HASH_SIZE"} = $hash_size;
 $ENV{"KRAKEN_MAX_DB_SIZE"} = $max_db_size;
 $ENV{"KRAKEN_WORK_ON_DISK"} = $work_on_disk;
-
+$ENV{"KRAKEN_USE_WGET"} = $use_wget ? 1 : "";
 if ($dl_taxonomy) {
   download_taxonomy();
 }
@@ -230,6 +232,8 @@ Options:
   --max-db-size SIZE         Shrink the DB before full build, making sure
                              database and index together use <= SIZE gigabytes
                              (build task only)
+  --use-wget                 Use wget for downloading instead of RSYNC; used with
+                             --download-library/--standard
   --shrink-block-offset NUM  When shrinking, select the k-mer that is NUM
                              positions from the end of a block of k-mers
                              (default: 1)
