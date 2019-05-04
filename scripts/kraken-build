@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2019, Derrick Wood, Jennifer Lu <jlu26@jhmi.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 #
@@ -249,7 +249,7 @@ sub display_help {
 
 sub display_version {
   print "Kraken version #####=VERSION=#####\n";
-  print "Copyright 2013-2015, Derrick Wood (dwood\@cs.jhu.edu)\n";
+  print "Copyright 2013-2019, Derrick Wood, Jennifer Lu (jlu26\@jhmi.edu))\n";
   exit 0;
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright 2013-2017, Derrick Wood <dwood@cs.jhu.edu>
+# Copyright 2013-2019, Derrick Wood, Jennifer Lu <jlu26@jhmi.edu>
 #
 # This file is part of the Kraken taxonomic sequence classification system.
 

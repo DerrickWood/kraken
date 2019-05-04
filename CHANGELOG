@@ -1,3 +1,8 @@
+v 1.1.1:
+* fixed download of taxonomy with NCBI taxonomy update est --> gb 
+* added --use-wget for downloading of data from NCBI instead of rsync
+* updated Copyright and emails 
+
 v1.1:
 * added --out-fmt paired and --out-fmt interleaved to allow paired reads
   to be separated when using --[un]classified-out options

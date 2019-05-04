@@ -19,7 +19,7 @@
 
 set -e
 
-VERSION="1.0"
+VERSION="1.1.1"
 
 if [ -z "$1" ] || [ -n "$2" ]
 then
