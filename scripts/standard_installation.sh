@@ -30,11 +30,17 @@ then
   WOD_FLAG="--work-on-disk"
 fi
 
+WGET_FLAG=""
+if [ -n "$KRAKEN_USE_WGET" ]
+then
+  WGET_FLAG="--use-wget"
+fi
+
 check_for_jellyfish.sh
 kraken-build --db $KRAKEN_DB_NAME --download-taxonomy
-kraken-build --db $KRAKEN_DB_NAME --download-library archaea
-kraken-build --db $KRAKEN_DB_NAME --download-library bacteria
-kraken-build --db $KRAKEN_DB_NAME --download-library viral
+kraken-build --db $KRAKEN_DB_NAME --download-library archaea $WGET_FLAG
+kraken-build --db $KRAKEN_DB_NAME --download-library bacteria $WGET_FLAG
+kraken-build --db $KRAKEN_DB_NAME --download-library viral $WGET_FLAG
 kraken-build --db $KRAKEN_DB_NAME --build --threads $KRAKEN_THREAD_CT \
                --jellyfish-hash-size "$KRAKEN_HASH_SIZE" \
                --max-db-size "$KRAKEN_MAX_DB_SIZE" \
