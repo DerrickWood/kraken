@@ -34,6 +34,9 @@ while (<>) {
   my $base_path = basename($ftp_path) . $suffix;
   # strip off server/leading dir name to allow --files-from= to work w/ rsync
   # also allows filenames to just start with "all/", which is nice
+  if ( $full_path =~/~^na/){
+  next
+  }
   if (! ($full_path =~ s#^ftp://ftp\.ncbi\.nlm\.nih\.gov/genomes/##)) {
     die "$PROG: unexpected FTP path (new server?) for $ftp_path\n";
   }
