@@ -1,5 +1,6 @@
 /*
- * Copyright 2013-2019, Derrick Wood, Jennifer Lu <jlu26@jhmi.edu>
+ * Original file Copyright 2013-2015, Derrick Wood <dwood@cs.jhu.edu>
+ * Portions (c) 2017-2018, Florian Breitwieser <fbreitwieser@jhu.edu> as part of KrakenUniq
  *
  * This file is part of the Kraken taxonomic sequence classification system.
  *
@@ -66,12 +67,14 @@ void QuickFile::open_file(string filename_str, string mode, size_t size) {
   }
 
   fptr = (char *)mmap(0, filesize, PROT_READ | PROT_WRITE, m_flags, fd, 0);
+  madvise(fptr,filesize,MADV_WILLNEED);
   if (fptr == MAP_FAILED)
     err(EX_OSERR, "unable to mmap %s", filename);
   valid = true;
 }
 
 void QuickFile::load_file() {
+  if(mlock(fptr,filesize)!=0){
   int thread_ct = 1;
   int thread = 0;
   #ifdef _OPENMP
@@ -84,13 +87,17 @@ void QuickFile::load_file() {
   size_t page_size = getpagesize();
   char buf[thread_ct][page_size];
 
+#ifdef _OPENMP
   #pragma omp parallel
+#endif
   {
     #ifdef _OPENMP
     thread = omp_get_thread_num();
     #endif
 
+#ifdef _OPENMP
     #pragma omp for schedule(dynamic)
+#endif
     for (size_t pos = 0; pos < filesize; pos += page_size) {
       size_t this_page_size = filesize - pos;
       if (this_page_size > page_size)
@@ -102,6 +109,7 @@ void QuickFile::load_file() {
   #ifdef _OPENMP
   omp_set_num_threads(old_thread_ct);
   #endif
+  }
 }
 
 char * QuickFile::ptr() {
@@ -128,5 +136,49 @@ void QuickFile::close_file() {
   close(fd);
   valid = false;
 }
+
+// from http://programanddesign.com/cpp/human-readable-file-size-in-c/
+char* readable_fs(double size/*in bytes*/, char *buf) {
+    int i = 0;
+    const char* units[] = {"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"};
+    while (size > 1024) {
+        size /= 1024;
+        i++;
+    }
+    sprintf(buf, "%.*f %s", i, size, units[i]);
+    return buf;
+}
+
+
+
+std::vector<char> slurp_file(std::string filename, size_t lSize) {
+  FILE * pFile;
+  size_t result;
+
+  pFile = fopen ( filename.c_str() , "rb" );
+  if (pFile==NULL) {fputs ("File error",stderr); exit (1);}
+
+  if (lSize > 0) {
+    // obtain file size:
+    fseek (pFile , 0 , SEEK_END);
+    lSize = ftell (pFile);
+    rewind (pFile);
+  }
+  
+  char buf[50];
+  readable_fs(lSize, buf);
+  std::cerr << "Getting " << filename << " into memory (" << buf << ") ..."; 
+
+  // copy the file into the vector:
+  std::vector<char> buffer(lSize);
+  result = fread (buffer.data(),1,lSize,pFile);
+  if (result != lSize) {fputs ("Reading error",stderr); exit (3);}
+  fclose (pFile);
+
+  std::cerr << " Done" << std::endl;
+  return(buffer);
+}
+
+
 
 } // namespace
