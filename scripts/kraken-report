@@ -75,16 +75,22 @@ my (%child_lists, %name_map, %rank_map);
 load_taxonomy($db_prefix);
 
 my %taxo_counts;
+my %taxo_bp;
 my $seq_count = 0;
+my $bp_count  = 0;
 $taxo_counts{0} = 0;
+$taxo_bp{0}     = 0;
 while (<>) {
   my @fields = split;
   $taxo_counts{$fields[2]}++;
+  $taxo_bp{$fields[2]}+=$fields[3];
   $seq_count++;
+  $bp_count+=$fields[3];
 }
 my $classified_count = $seq_count - $taxo_counts{0};
 
-my %clade_counts = %taxo_counts;
+#my %clade_counts = %taxo_counts;
+my %clade_counts = %taxo_bp;
 dfs_summation(1);
 
 for (keys %name_map) {
@@ -93,9 +99,8 @@ for (keys %name_map) {
 
 my $unclassified_percent = 100;
 if ($seq_count) {
-  $unclassified_percent = $clade_counts{0} * 100 / $seq_count;
+  $unclassified_percent = $clade_counts{0} * 100 / $bp_count;
 }
-
 printf "%6.2f\t%d\t%d\t%s\t%d\t%s%s\n",
   $unclassified_percent,
   $clade_counts{0}, $taxo_counts{0}, "U",
@@ -108,8 +113,15 @@ sub dfs_report {
   if (! $clade_counts{$node} && ! $show_zeros) {
     return;
   }
+
+  if(!defined($name_map{$node})){
+    warn "Warning: name_map of $node is not defined. Setting to UNKNOWN. Be sure to set scientific name for node ID in $db_prefix/taxonomy/names.dmp";
+    $name_map{$node}="UNKNOWN";
+  }
+
   printf "%6.2f\t%d\t%d\t%s\t%d\t%s%s\n",
-    ($clade_counts{$node} || 0) * 100 / $seq_count,
+  #($clade_counts{$node} || 0) * 100 / $seq_count,
+    ($clade_counts{$node} || 0) * 100 / $bp_count,
     ($clade_counts{$node} || 0),
     ($taxo_counts{$node} || 0),
     rank_code($rank_map{$node}),
@@ -117,6 +129,12 @@ sub dfs_report {
     "  " x $depth,
     $name_map{$node};
   my $children = $child_lists{$node};
+
+  # set default for undefined
+  for(@$children){
+    $clade_counts{$_}//=0;
+  }
+
   if ($children) {
     my @sorted_children = sort { $clade_counts{$b} <=> $clade_counts{$a} } @$children;
     for my $child (@sorted_children) {
