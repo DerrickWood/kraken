@@ -39,6 +39,7 @@ $ENV{"PATH"} = "$KRAKEN_DIR:$ENV{PATH}";
 my $DEF_MINIMIZER_LEN = 15;
 my $DEF_KMER_LEN = 31;
 my $DEF_THREAD_CT = 1;
+my $DEF_SHRINK_BLOCK_OFFSET = 1;
 
 my @VALID_LIBRARY_TYPES = qw/archaea bacteria plasmid viral human/;
 
@@ -69,6 +70,7 @@ my (
 $threads = $DEF_THREAD_CT;
 $minimizer_len = $DEF_MINIMIZER_LEN;
 $kmer_len = $DEF_KMER_LEN;
+$shrink_block_offset = $DEF_SHRINK_BLOCK_OFFSET;
 $work_on_disk = "";
 $hash_size = "";
 $max_db_size = "";
@@ -236,7 +238,7 @@ Options:
                              --download-library/--standard
   --shrink-block-offset NUM  When shrinking, select the k-mer that is NUM
                              positions from the end of a block of k-mers
-                             (default: 1)
+                             (def: $DEF_SHRINK_BLOCK_OFFSET)
   --work-on-disk             Perform most operations on disk rather than in
                              RAM (will slow down build in most cases)
 EOF
